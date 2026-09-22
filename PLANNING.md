@@ -298,7 +298,7 @@ La **documentación** se reparte entre todos: README (M1), memoria (secciones po
 
 ## 11. Entregables (§6)
 
-- [ ] URL pública de la aplicación desplegada
+- [x] URL pública de la aplicación desplegada: https://www.zapatero.onl
 - [ ] Repositorio GitHub con commits de los 5 miembros
 - [ ] Zip del código fuente en el Campus Virtual
 - [ ] README: instalación, ejecución, usuarios de prueba, limitaciones conocidas
