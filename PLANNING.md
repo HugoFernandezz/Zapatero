@@ -329,5 +329,5 @@ La **documentación** se reparte entre todos: README (M1), memoria (secciones po
 ## 13. Pendiente
 
 - [ ] Copiar aquí la **rúbrica de evaluación (§10)** del enunciado y mapear cada criterio a las secciones del plan.
-- [ ] Confirmar la versión de PHP y las extensiones del plan de DonDominio.
+- [x] Confirmar la versión de PHP y las extensiones del plan de DonDominio: PHP 8.5 con `pdo_sqlite` (comprobado con `phpinfo()`).
 - [ ] Asignar nombres reales a M1-M5.
