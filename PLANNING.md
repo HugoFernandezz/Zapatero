@@ -275,6 +275,11 @@ La **documentación** se reparte entre todos: README (M1), memoria (secciones po
 - Cada rama entra en `main` por Pull Request, revisado por al menos otro miembro.
 - Commits pequeños y descriptivos, para que el historial muestre la contribución de **todos** (§8.1).
 
+**Uso de agentes de IA (Claude Code u otros) en el repositorio**
+- El agente de IA **nunca** ejecuta `git commit` ni `git push` por su cuenta.
+- Cuando haya cambios listos, el agente se limita a **indicar al miembro los comandos** de git a ejecutar (o preparar el mensaje de commit), y es el propio miembro quien los lanza desde su cuenta.
+- Los commits **no** llevan al agente como coautor (nada de `Co-authored-by: Claude` ni firmas similares); el autor del commit es siempre la persona, para que el historial refleje fielmente la contribución de cada uno de los 5 miembros (§8.1).
+
 ---
 
 ## 10. Cronograma por hitos
