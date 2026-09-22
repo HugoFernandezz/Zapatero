@@ -46,6 +46,7 @@ El dominio apunta a la carpeta `/public/` del FTP ([ayuda de DonDominio](https:/
 3. Conectarse por FTP (FileZilla). Los datos de acceso están en la sección **FTP** del panel ([ayuda](https://www.dondominio.com/es/help/120/como-subo-web-mediante-ftp/)).
    Activar *Servidor → Forzar mostrar archivos ocultos* para ver los `.htaccess`.
 4. Subir a la raíz del FTP: `src/`, `templates/`, `database/`, `storage/`, `vendor/`, `.htaccess`, y el contenido de nuestra `public/` dentro de `/public/`.
+   Ojo: hay dos `.htaccess` con el mismo nombre. Si el de la raíz acaba en `/public/`, toda la web da 403.
    No subir `.git/`, `.env` ni ningún `.sqlite` local.
 5. Crear en la raíz del FTP un `.env` a partir de `.env.example` con `APP_ENV=production` y `APP_DEBUG=false`.
 6. Dar permisos de escritura a `storage/` con `chmod` desde el cliente FTP (SQLite necesita escribir en la carpeta, no solo en el fichero).
