@@ -15,7 +15,7 @@ return function (App $app, PDO $pdo, PhpRenderer $view): void {
             'status' => 'ok',
             'php' => PHP_VERSION,
             'sqlite' => $pdo->query('SELECT sqlite_version()')->fetchColumn(),
-            'tables' => (int) $pdo->query("SELECT count(*) FROM sqlite_master WHERE type = 'table'")->fetchColumn(),
+            'tables' => (int) $pdo->query("SELECT count(*) FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'")->fetchColumn(),
         ]));
 
         return $res->withHeader('Content-Type', 'application/json');
