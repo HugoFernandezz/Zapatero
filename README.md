@@ -34,18 +34,24 @@ storage/     base de datos SQLite (no versionada)
 
 ## Despliegue en DonDominio
 
-En el hosting de DonDominio, la carpeta `/public` del FTP es la raíz web del dominio, así que la estructura del proyecto encaja tal cual: todo se sube a la raíz del FTP y solo `public/` queda expuesta.
+El hosting usa **PHP 8.5 con `pdo_sqlite`** (comprobado con `phpinfo()`). Solo hay acceso por FTP, así que las dependencias se instalan en local y se sube `vendor/`.
 
-1. En el panel de DonDominio, seleccionar **PHP 8.1 o superior** y comprobar que `pdo_sqlite` está activo.
+El dominio apunta a la carpeta `/public/` del FTP ([ayuda de DonDominio](https://www.dondominio.com/es/help/121/para-que-sirven-las-distintas-carpetas-mi-dominio/)), que coincide con nuestra `public/`. El resto del proyecto va en la raíz del FTP, al mismo nivel que `/public/`.
+
+1. Comprobar la versión en el panel del hosting: **Sitios web → Versión PHP** (debe ser 8.1 o superior).
 2. En local, instalar las dependencias sin las de desarrollo:
    ```bash
    composer install --no-dev --optimize-autoloader
    ```
-3. Subir por FTP (FileZilla) a la raíz del hosting: `public/`, `src/`, `templates/`, `database/`, `storage/`, `vendor/` y `.htaccess`.
+3. Conectarse por FTP (FileZilla). Los datos de acceso están en la sección **FTP** del panel ([ayuda](https://www.dondominio.com/es/help/120/como-subo-web-mediante-ftp/)).
+   Activar *Servidor → Forzar mostrar archivos ocultos* para ver los `.htaccess`.
+4. Subir a la raíz del FTP: `src/`, `templates/`, `database/`, `storage/`, `vendor/`, `.htaccess`, y el contenido de nuestra `public/` dentro de `/public/`.
    No subir `.git/`, `.env` ni ningún `.sqlite` local.
-4. Crear en el servidor un `.env` a partir de `.env.example` con `APP_ENV=production` y `APP_DEBUG=false`.
-5. Dar permisos de escritura a `storage/` (SQLite necesita escribir en la carpeta, no solo en el fichero).
-6. Abrir `https://<dominio>/health`. En la primera petición se crea la base de datos.
+5. Crear en la raíz del FTP un `.env` a partir de `.env.example` con `APP_ENV=production` y `APP_DEBUG=false`.
+6. Dar permisos de escritura a `storage/` con `chmod` desde el cliente FTP (SQLite necesita escribir en la carpeta, no solo en el fichero).
+7. Abrir `http://<dominio>/health`. En la primera petición se crea la base de datos.
+
+Si algo falla, los errores se ven en el panel: **Sitios web → Ver logs → "Servidor web - Últimos errores"** ([ayuda](https://www.dondominio.com/es/help/278/como-visualizar-logs-errores/)).
 
 Para actualizar, basta con volver a subir los ficheros cambiados (y `vendor/` si cambió `composer.lock`). No hay que sobrescribir `storage/`.
 
