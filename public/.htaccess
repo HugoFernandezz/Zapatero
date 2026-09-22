@@ -1,3 +1,6 @@
+# Anula el "Require all denied" del .htaccess de la raíz del proyecto
+Require all granted
+
 RewriteEngine On
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
