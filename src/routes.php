@@ -2,13 +2,23 @@
 
 declare(strict_types=1);
 
+use App\Controllers\CatalogController;
+use App\Controllers\HomeController;
+use App\Controllers\ProductController;
+use App\Repositories\CatalogRepository;
+use App\Services\CatalogService;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\App;
 use Slim\Views\PhpRenderer;
 
 return function (App $app, PDO $pdo, PhpRenderer $view): void {
-    $app->get('/', fn (Request $req, Response $res) => $view->render($res, 'home.php'));
+    $catalogService = new CatalogService(new CatalogRepository($pdo));
+    $recordEvent = null; // M5 conectara aqui EventService::record('product.viewed', payload).
+
+    $app->get('/', [new HomeController($view, $catalogService), 'index']);
+    $app->get('/catalogo', [new CatalogController($view, $catalogService), 'index']);
+    $app->get('/producto/{slug}', [new ProductController($view, $catalogService, $recordEvent), 'show']);
 
     $app->get('/health', function (Request $req, Response $res) use ($pdo) {
         $res->getBody()->write(json_encode([
