@@ -13,7 +13,7 @@ $money = static fn (int $cents): string => number_format($cents / 100, 2, ',', '
         </div>
     </div>
     <div class="hero-media">
-        <img src="/assets/img/products/avenida-neon.png" alt="Zapatilla Avenida Neón con diseño urbano">
+        <img src="/assets/img/products/avenida-neon.webp" alt="Zapatilla Avenida Neón con diseño urbano">
     </div>
 </section>
 
