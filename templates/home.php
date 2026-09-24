@@ -10,17 +10,11 @@ $money = static fn (int $cents): string => number_format($cents / 100, 2, ',', '
         <p>Un catálogo estable de zapatillas urbanas con estampados originales, stock por talla y colecciones pensadas para el día a día.</p>
         <div class="hero-actions">
             <a class="button primary" href="/catalogo">Ver catálogo</a>
-            <a class="button secondary" href="/catalogo?talla=42">Buscar talla 42</a>
         </div>
     </div>
     <div class="hero-media">
-        <img src="/assets/img/products/avenida-neon.svg" alt="Zapatilla Avenida Neón con diseño urbano">
+        <img src="/assets/img/products/avenida-neon.png" alt="Zapatilla Avenida Neón con diseño urbano">
     </div>
-</section>
-
-<section class="notice-panel">
-    <h2>Canal digital de prueba</h2>
-    <p>Zapatero es una marca ficticia para una tarea académica. Los productos, precios, pagos y envíos son simulados.</p>
 </section>
 
 <section class="section-block">

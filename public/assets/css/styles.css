@@ -193,19 +193,6 @@ main {
     margin-top: 1.5rem;
 }
 
-.notice-panel {
-    margin-bottom: 2rem;
-    padding: 1rem 1.2rem;
-    background: #fff5d6;
-    border: 1px solid #e7cb72;
-    border-radius: 0.5rem;
-}
-
-.notice-panel h2,
-.notice-panel p {
-    margin: 0.2rem 0;
-}
-
 .section-block,
 .page-heading {
     padding: clamp(2rem, 4vw, 3.5rem) 0;
@@ -261,8 +248,7 @@ main {
 
 .collection-card p,
 .description,
-.meta,
-.form-hint {
+.meta {
     color: var(--muted);
 }
 
@@ -307,6 +293,11 @@ main {
 .price {
     color: var(--ink);
     font-weight: 900;
+    white-space: nowrap;
+}
+
+.product-card-footer strong {
+    white-space: nowrap;
 }
 
 .product-card-footer {
@@ -481,11 +472,6 @@ select {
 .size-grid .is-empty {
     color: var(--muted);
     background: #f6f3ee;
-}
-
-.form-hint {
-    margin: 0;
-    font-size: 0.88rem;
 }
 
 .site-footer {

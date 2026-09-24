@@ -58,7 +58,6 @@ $money = static fn (int $cents): string => number_format($cents / 100, 2, ',', '
             </fieldset>
 
             <button class="button primary" type="submit">Añadir al carrito</button>
-            <p class="form-hint">Contrato para M3: POST /carrito/agregar con variant_id y producto_slug.</p>
         </form>
     </div>
 </section>
