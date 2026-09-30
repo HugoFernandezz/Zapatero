@@ -6,52 +6,6 @@ $old = $old ?? [];
 
 ?>
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title><?= htmlspecialchars($pageTitle ?? 'Soporte') ?></title>
-
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 700px;
-            margin: 40px auto;
-            padding: 0 20px;
-        }
-
-        label {
-            display: block;
-            margin-top: 15px;
-            margin-bottom: 5px;
-        }
-
-        input,
-        textarea {
-            width: 100%;
-            padding: 10px;
-            box-sizing: border-box;
-        }
-
-        textarea {
-            min-height: 150px;
-        }
-
-        button {
-            margin-top: 20px;
-            padding: 10px 20px;
-        }
-
-        .error {
-            background: #f8d7da;
-            padding: 10px;
-            margin-bottom: 20px;
-        }
-    </style>
-</head>
-
-<body>
-
 <h1>Soporte</h1>
 
 <?php if (!empty($error)): ?>
@@ -111,6 +65,3 @@ $old = $old ?? [];
 <p>
     <a href="/">Volver a inicio</a>
 </p>
-
-</body>
-</html>

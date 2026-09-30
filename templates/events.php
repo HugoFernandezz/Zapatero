@@ -6,47 +6,6 @@ $events = $events ?? [];
 
 ?>
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title><?= htmlspecialchars($pageTitle ?? 'Eventos - Zapatero') ?></title>
-
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 30px;
-        }
-
-        h1 {
-            margin-bottom: 20px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th,
-        td {
-            border: 1px solid #ccc;
-            padding: 10px;
-            text-align: left;
-        }
-
-        th {
-            background: #f2f2f2;
-        }
-
-        pre {
-            margin: 0;
-            white-space: pre-wrap;
-        }
-    </style>
-</head>
-
-<body>
-
 <h1>Eventos de Zapatero</h1>
 
 <table>
@@ -76,6 +35,3 @@ $events = $events ?? [];
         <?php endforeach; ?>
     </tbody>
 </table>
-
-</body>
-</html>

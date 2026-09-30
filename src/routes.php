@@ -134,8 +134,7 @@ return function (App $app, PDO $pdo, PhpRenderer $view): void {
      * M5 - API DE EVENTOS
      * =========================
      */
-
-    $app->get('/api/events', function (
+     $app->get('/api/events', function (
         Request $req,
         Response $res
     ) use ($eventService) {
@@ -155,10 +154,22 @@ return function (App $app, PDO $pdo, PhpRenderer $view): void {
             $since
         );
 
+        foreach ($events as &$event) {
+            $event['payload'] = json_decode(
+                (string) $event['payload'],
+                true,
+                512,
+                JSON_THROW_ON_ERROR
+            );
+        }
+
+        unset($event);
+
         $res->getBody()->write(
             json_encode(
                 $events,
-                JSON_UNESCAPED_UNICODE
+                JSON_UNESCAPED_UNICODE |
+                JSON_THROW_ON_ERROR
             )
         );
 
@@ -174,8 +185,7 @@ return function (App $app, PDO $pdo, PhpRenderer $view): void {
      * M5 - CSV DE EVENTOS
      * =========================
      */
-
-    $app->get('/api/events.csv', function (
+     $app->get('/api/events.csv', function (
         Request $req,
         Response $res
     ) use ($eventService) {
@@ -194,10 +204,9 @@ return function (App $app, PDO $pdo, PhpRenderer $view): void {
             'session_id',
             'user_id',
             'payload'
-        ]);
+        ], ',', '"', '');
 
         foreach ($events as $event) {
-
             fputcsv($handle, [
                 $event['id'],
                 $event['type'],
@@ -205,7 +214,7 @@ return function (App $app, PDO $pdo, PhpRenderer $view): void {
                 $event['session_id'],
                 $event['user_id'],
                 $event['payload']
-            ]);
+            ], ',', '"', '');
         }
 
         rewind($handle);

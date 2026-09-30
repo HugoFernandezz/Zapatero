@@ -520,10 +520,93 @@ select {
     .size-grid {
         grid-template-columns: 1fr;
     }
-
-    .section-heading.with-action,
+        .section-heading.with-action,
     .product-card-footer {
         align-items: flex-start;
         flex-direction: column;
+    }
+}
+
+/* =========================
+   M5 - Soporte e incidencias
+   ========================= */
+
+form {
+    display: grid;
+    gap: 0.8rem;
+    max-width: 650px;
+    margin-bottom: 1.5rem;
+}
+
+form input,
+form textarea {
+    width: 100%;
+    padding: 0.65rem 0.75rem;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 0.4rem;
+    font: inherit;
+}
+
+form textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+form button {
+    width: fit-content;
+    min-height: 2.5rem;
+    padding: 0.6rem 1rem;
+    color: #fff;
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 0.4rem;
+    font: inherit;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+form button:hover {
+    background: var(--accent-dark);
+}
+
+table {
+    width: 100%;
+    margin: 1.5rem 0;
+    border-collapse: collapse;
+    background: var(--surface);
+    border: 1px solid var(--line);
+}
+
+th,
+td {
+    padding: 0.8rem;
+    border: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+}
+
+th {
+    color: var(--ink);
+    background: var(--soft);
+    font-weight: 850;
+}
+
+table pre {
+    margin: 0;
+    white-space: pre-wrap;
+    font: inherit;
+    color: var(--muted);
+}
+
+table form {
+    margin: 0;
+}
+
+@media (max-width: 900px) {
+    table {
+        display: block;
+        overflow-x: auto;
     }
 }
