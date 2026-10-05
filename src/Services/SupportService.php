@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Repositories\SupportRepository;
-use RuntimeException;
+use InvalidArgumentException;
 
 final class SupportService
 {
@@ -31,7 +31,7 @@ final class SupportService
             );
 
             if ($order === null) {
-                throw new RuntimeException('El pedido indicado no existe.');
+                throw new InvalidArgumentException('El pedido indicado no existe.');
             }
 
             $orderId = (int) $order['id'];
@@ -41,11 +41,11 @@ final class SupportService
         $message = trim($message);
 
         if ($subject === '') {
-            throw new RuntimeException('El asunto es obligatorio.');
+            throw new InvalidArgumentException('El asunto es obligatorio.');
         }
 
         if ($message === '') {
-            throw new RuntimeException('El mensaje es obligatorio.');
+            throw new InvalidArgumentException('El mensaje es obligatorio.');
         }
 
         $ticketId = $this->support->createTicket(
@@ -77,11 +77,11 @@ final class SupportService
         $ticket = $this->support->findTicket($ticketId);
 
         if ($ticket === null) {
-            throw new RuntimeException('La incidencia no existe.');
+            throw new InvalidArgumentException('La incidencia no existe.');
         }
 
         if ($ticket['order_id'] === null) {
-            throw new RuntimeException(
+            throw new InvalidArgumentException(
                 'La incidencia debe estar asociada a un pedido.'
             );
         }
@@ -91,7 +91,7 @@ final class SupportService
         );
 
         if ($order === null) {
-            throw new RuntimeException(
+            throw new InvalidArgumentException(
                 'El estado actual del pedido no permite crear una incidencia.'
             );
         }
@@ -112,11 +112,11 @@ final class SupportService
         $ticket = $this->support->findTicket($ticketId);
 
         if ($ticket === null) {
-            throw new RuntimeException('La incidencia no existe.');
+            throw new InvalidArgumentException('La incidencia no existe.');
         }
 
         if ($ticket['order_id'] === null) {
-            throw new RuntimeException(
+            throw new InvalidArgumentException(
                 'La incidencia no está asociada a un pedido.'
             );
         }
@@ -126,7 +126,7 @@ final class SupportService
         );
 
         if ($order === null) {
-            throw new RuntimeException(
+            throw new InvalidArgumentException(
                 'El pedido no está actualmente en estado incident.'
             );
         }

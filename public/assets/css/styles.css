@@ -520,26 +520,24 @@ select {
     .size-grid {
         grid-template-columns: 1fr;
     }
-        .section-heading.with-action,
+
+    .section-heading.with-action,
     .product-card-footer {
         align-items: flex-start;
         flex-direction: column;
     }
 }
 
-/* =========================
-   M5 - Soporte e incidencias
-   ========================= */
-
-form {
+/* Soporte e incidencias */
+.support-form {
     display: grid;
     gap: 0.8rem;
     max-width: 650px;
     margin-bottom: 1.5rem;
 }
 
-form input,
-form textarea {
+.support-form input,
+.support-form textarea {
     width: 100%;
     padding: 0.65rem 0.75rem;
     color: var(--ink);
@@ -549,29 +547,19 @@ form textarea {
     font: inherit;
 }
 
-form textarea {
+.support-form textarea {
     min-height: 120px;
     resize: vertical;
 }
 
-form button {
-    width: fit-content;
-    min-height: 2.5rem;
-    padding: 0.6rem 1rem;
-    color: #fff;
-    background: var(--accent);
-    border: 1px solid var(--accent);
+.form-error {
+    max-width: 650px;
+    padding: 0.8rem;
+    background: #f8d7da;
     border-radius: 0.4rem;
-    font: inherit;
-    font-weight: 800;
-    cursor: pointer;
 }
 
-form button:hover {
-    background: var(--accent-dark);
-}
-
-table {
+.admin-table {
     width: 100%;
     margin: 1.5rem 0;
     border-collapse: collapse;
@@ -579,33 +567,27 @@ table {
     border: 1px solid var(--line);
 }
 
-th,
-td {
+.admin-table th,
+.admin-table td {
     padding: 0.8rem;
     border: 1px solid var(--line);
     text-align: left;
     vertical-align: top;
 }
 
-th {
-    color: var(--ink);
+.admin-table th {
     background: var(--soft);
-    font-weight: 850;
 }
 
-table pre {
+.admin-table pre {
     margin: 0;
     white-space: pre-wrap;
     font: inherit;
     color: var(--muted);
 }
 
-table form {
-    margin: 0;
-}
-
 @media (max-width: 900px) {
-    table {
+    .admin-table {
         display: block;
         overflow-x: auto;
     }

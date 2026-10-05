@@ -8,7 +8,7 @@ $tickets = $tickets ?? [];
 
 <h1>Incidencias y soporte</h1>
 
-<table>
+<table class="admin-table">
 
     <thead>
         <tr>
@@ -83,7 +83,7 @@ $tickets = $tickets ?? [];
                         method="post"
                         action="/admin/incidencias/<?= (int) $ticket['id'] ?>/crear"
                     >
-                        <button type="submit">
+                        <button class="button primary" type="submit">
                             Crear incidencia
                         </button>
                     </form>
@@ -96,7 +96,7 @@ $tickets = $tickets ?? [];
                         method="post"
                         action="/admin/incidencias/<?= (int) $ticket['id'] ?>/resolver"
                     >
-                        <button type="submit">
+                        <button class="button primary" type="submit">
                             Resolver
                         </button>
                     </form>

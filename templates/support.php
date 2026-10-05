@@ -9,12 +9,12 @@ $old = $old ?? [];
 <h1>Soporte</h1>
 
 <?php if (!empty($error)): ?>
-    <div class="error">
+    <div class="form-error">
         <?= htmlspecialchars((string) $error) ?>
     </div>
 <?php endif; ?>
 
-<form method="post" action="/soporte">
+<form class="support-form" method="post" action="/soporte">
 
     <label for="order_code">
         Código del pedido
@@ -56,7 +56,7 @@ $old = $old ?? [];
         (string) ($old['message'] ?? '')
     ) ?></textarea>
 
-    <button type="submit">
+    <button class="button primary" type="submit">
         Enviar solicitud
     </button>
 

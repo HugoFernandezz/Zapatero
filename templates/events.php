@@ -8,7 +8,7 @@ $events = $events ?? [];
 
 <h1>Eventos de Zapatero</h1>
 
-<table>
+<table class="admin-table">
     <thead>
         <tr>
             <th>ID</th>
