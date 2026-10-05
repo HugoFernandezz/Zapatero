@@ -104,6 +104,10 @@ function seedCatalog(PDO $pdo): void
             }
         }
 
+        $insertDiscount = $pdo->prepare('INSERT OR IGNORE INTO discount_codes (code, type, value) VALUES (:code, :type, :value)');
+        $insertDiscount->execute(['code' => 'BIENVENIDA10', 'type' => 'percent', 'value' => 10]);
+        $insertDiscount->execute(['code' => 'ZAP5', 'type' => 'fixed', 'value' => 500]);
+
         $pdo->commit();
     } catch (Throwable $exception) {
         $pdo->rollBack();

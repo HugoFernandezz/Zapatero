@@ -105,14 +105,21 @@ final class CartService
         ];
     }
 
+    public function isValidDiscount(string $code): bool
+    {
+        return $this->repository->discountCode($code) !== null;
+    }
+
     private function discount(?string $code, int $subtotal): array
     {
         $code = strtoupper(trim((string) $code));
-        if ($code === '' || $subtotal === 0) return [0, null];
-        return match ($code) {
-            'BIENVENIDA10' => [(int) round($subtotal * 10 / 100, 0, PHP_ROUND_HALF_UP), $code],
-            'ZAP5' => [min(500, $subtotal), $code],
-            default => [0, null],
-        };
+        $row = $code === '' || $subtotal === 0 ? null : $this->repository->discountCode($code);
+        if ($row === null) {
+            return [0, null];
+        }
+        $amount = $row['type'] === 'percent'
+            ? (int) round($subtotal * (int) $row['value'] / 100, 0, PHP_ROUND_HALF_UP)
+            : min((int) $row['value'], $subtotal);
+        return [$amount, $row['code']];
     }
 }

@@ -4,22 +4,36 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use PDO;
+use App\Repositories\EventRepository;
 
-/** Adaptador mínimo al esquema events de M5; los datos son exclusivamente del prototipo. */
 final class EventService
 {
-    public function __construct(private readonly PDO $pdo) {}
+    public function __construct(
+        private readonly EventRepository $events
+    ) {
+    }
 
-    public function record(string $type, array $payload, ?string $sessionId): void
-    {
-        $statement = $this->pdo->prepare(
-            'INSERT INTO events (type, session_id, payload) VALUES (:type, :session_id, :payload)'
+    public function record(
+        string $type,
+        array $payload = [],
+        ?string $sessionId = null,
+        ?int $userId = null
+    ): int {
+        return $this->events->create(
+            $type,
+            $sessionId,
+            $userId,
+            $payload
         );
-        $statement->execute([
-            'type' => $type,
-            'session_id' => $sessionId,
-            'payload' => json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
-        ]);
+    }
+
+    public function all(
+        ?string $type = null,
+        ?string $since = null
+    ): array {
+        return $this->events->all(
+            $type,
+            $since
+        );
     }
 }

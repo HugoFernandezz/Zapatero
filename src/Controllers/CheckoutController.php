@@ -42,20 +42,24 @@ final class CheckoutController
     {
         $body = (array) $request->getParsedBody();
         if (!isset($_SESSION['_csrf']) || !hash_equals($_SESSION['_csrf'], (string) ($body['_csrf'] ?? ''))) {
-            return $this->renderForm($response->withStatus(400), [], [], 'La sesión del formulario caducó. Recarga el checkout.');
+            $_SESSION['_flash_error'] = 'La sesión del formulario caducó. Inténtalo de nuevo.';
+            return $response->withHeader('Location', '/carrito')->withStatus(303);
         }
-        try { $summary = $this->checkout->start($_SESSION, session_id()); }
-        catch (DomainException $e) {
+        try {
+            $summary = $this->checkout->start($_SESSION, session_id());
+        } catch (DomainException $e) {
             $_SESSION['_flash_error'] = $e->getMessage();
             return $response->withHeader('Location', '/carrito')->withStatus(303);
         }
         $result = $this->checkout->validate($body);
-        if ($result['errors'] !== []) return $this->renderForm($response->withStatus(422), $result['data'], $result['errors'], null, $summary);
+        if ($result['errors'] !== []) {
+            return $this->renderForm($response->withStatus(422), $result['data'], $result['errors'], null, $summary);
+        }
 
         // M4 puede consumir este dato de sesión al crear orders y order_items.
         $_SESSION['shipping_data'] = $result['data'];
         $_SESSION['checkout_quote'] = $summary;
-        return $this->renderForm($response, $result['data'], [], null, $summary, 'Datos de envío validados. Ya puedes continuar con la integración del pedido/pago simulado.');
+        return $this->renderForm($response, $result['data'], [], null, $summary, 'Datos de envío validados.');
     }
 
     private function renderForm(Response $response, array $formData, array $errors, ?string $error, ?array $summary = null, ?string $success = null): Response

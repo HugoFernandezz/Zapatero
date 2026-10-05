@@ -2,41 +2,65 @@
 
 declare(strict_types=1);
 
-use App\Controllers\CatalogController;
 use App\Controllers\CartController;
+use App\Controllers\CatalogController;
 use App\Controllers\CheckoutController;
+use App\Controllers\EventController;
 use App\Controllers\HomeController;
 use App\Controllers\ProductController;
-use App\Repositories\CatalogRepository;
+use App\Controllers\SupportController;
 use App\Repositories\CartRepository;
-use App\Services\CatalogService;
+use App\Repositories\CatalogRepository;
+use App\Repositories\EventRepository;
+use App\Repositories\SupportRepository;
 use App\Services\CartService;
+use App\Services\CatalogService;
 use App\Services\CheckoutService;
 use App\Services\EventService;
+use App\Services\SupportService;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\App;
+use Slim\Routing\RouteCollectorProxy;
 use Slim\Views\PhpRenderer;
 
 return function (App $app, PDO $pdo, PhpRenderer $view): void {
     $catalogService = new CatalogService(new CatalogRepository($pdo));
-    $events = new EventService($pdo);
-    // Compatible con ProductController (pasa Request) y con CartService (pasa el id de sesión).
-    $recordEvent = static fn (string $type, array $payload, mixed $context = null) =>
-        $events->record($type, $payload, is_string($context) ? $context : session_id());
+    $eventService = new EventService(new EventRepository($pdo));
+    $supportController = new SupportController($view, new SupportService(new SupportRepository($pdo), $eventService));
+    $eventController = new EventController($view, $eventService);
+
+    // El tercer argumento es el id de sesión; si no es un string, se usa el de la sesión actual.
+    $recordEvent = static fn (string $type, array $payload, mixed $sessionId = null) =>
+        $eventService->record($type, $payload, is_string($sessionId) ? $sessionId : session_id());
+
     $cartService = new CartService(new CartRepository($pdo), $recordEvent);
+    $cartController = new CartController($view, $cartService);
+    $checkoutController = new CheckoutController($view, new CheckoutService($cartService), $eventService);
 
     $app->get('/', [new HomeController($view, $catalogService), 'index']);
     $app->get('/catalogo', [new CatalogController($view, $catalogService), 'index']);
     $app->get('/producto/{slug}', [new ProductController($view, $catalogService, $recordEvent), 'show']);
 
-    $app->get('/carrito', [new CartController($view, $cartService), 'show']);
-    $app->post('/carrito/agregar', [new CartController($view, $cartService), 'add']);
-    $app->post('/carrito/actualizar', [new CartController($view, $cartService), 'update']);
-    $app->post('/carrito/descuento', [new CartController($view, $cartService), 'discount']);
-    $checkout = new CheckoutController($view, new CheckoutService($cartService), $events);
-    $app->get('/checkout', [$checkout, 'show']);
-    $app->post('/checkout', [$checkout, 'submit']);
+    $app->get('/carrito', [$cartController, 'show']);
+    $app->post('/carrito/agregar', [$cartController, 'add']);
+    $app->post('/carrito/actualizar', [$cartController, 'update']);
+    $app->post('/carrito/descuento', [$cartController, 'discount']);
+    $app->get('/checkout', [$checkoutController, 'show']);
+    $app->post('/checkout', [$checkoutController, 'submit']);
+
+    $app->get('/soporte', [$supportController, 'form']);
+    $app->post('/soporte', [$supportController, 'store']);
+
+    $app->get('/api/events', [$eventController, 'json']);
+    $app->get('/api/events.csv', [$eventController, 'csv']);
+
+    $app->group('/admin', function (RouteCollectorProxy $admin) use ($eventController, $supportController) {
+        $admin->get('/events', [$eventController, 'index']);
+        $admin->get('/incidencias', [$supportController, 'incidents']);
+        $admin->post('/incidencias/{id}/crear', [$supportController, 'createIncident']);
+        $admin->post('/incidencias/{id}/resolver', [$supportController, 'resolveIncident']);
+    });
 
     $app->get('/health', function (Request $req, Response $res) use ($pdo) {
         $res->getBody()->write(json_encode([
