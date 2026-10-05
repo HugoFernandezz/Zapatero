@@ -13,6 +13,9 @@ require $root . '/vendor/autoload.php';
 Dotenv::createImmutable($root)->safeLoad();
 
 $debug = ($_ENV['APP_DEBUG'] ?? 'false') === 'true';
+$secureCookie = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+session_set_cookie_params(['httponly' => true, 'secure' => $secureCookie, 'samesite' => 'Lax', 'path' => '/']);
+session_start();
 $pdo = Database::connect($root . '/' . ($_ENV['DB_PATH'] ?? 'storage/zapatero.sqlite'));
 
 $view = new PhpRenderer($root . '/templates');

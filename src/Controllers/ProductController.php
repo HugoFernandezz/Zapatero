@@ -11,10 +11,7 @@ use Slim\Views\PhpRenderer;
 
 final class ProductController
 {
-    /**
-     * M5 conectará aquí App\Services\EventService cuando esté disponible.
-     * Firma esperada del callable: function (string $type, array $payload, Request $request): void
-     */
+    /** $recordEvent: callable (string $type, array $payload, mixed $context): void, definido en routes.php. */
     public function __construct(
         private readonly PhpRenderer $view,
         private readonly CatalogService $catalog,
@@ -37,6 +34,7 @@ final class ProductController
         return $this->view->render($response, 'product.php', [
             'pageTitle' => $product['name'] . ' - Zapatero',
             'product' => $product,
+            'csrfToken' => $_SESSION['_csrf'] ??= bin2hex(random_bytes(32)),
         ]);
     }
 

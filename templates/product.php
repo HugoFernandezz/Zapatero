@@ -36,6 +36,7 @@ $money = static fn (int $cents): string => number_format($cents / 100, 2, ',', '
         <form class="add-to-cart-form" method="post" action="/carrito/agregar">
             <input type="hidden" name="producto_slug" value="<?= $esc($product['slug']) ?>">
             <input type="hidden" name="return_to" value="/producto/<?= $esc($product['slug']) ?>">
+            <input type="hidden" name="_csrf" value="<?= $esc($csrfToken) ?>">
 
             <fieldset>
                 <legend>Selecciona talla EU</legend>

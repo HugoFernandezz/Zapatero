@@ -19,6 +19,7 @@
         <nav class="main-nav" aria-label="Navegación principal">
             <a href="/">Home</a>
             <a href="/catalogo">Catálogo</a>
+            <a href="/carrito">Carrito</a>
         </nav>
     </header>
 
