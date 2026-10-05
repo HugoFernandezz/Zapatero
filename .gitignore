@@ -1,0 +1,44 @@
+# Enunciado de la tarea (no se sube al repo)
+enunciado_tarea.pdf
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores / IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Entornos y dependencias
+.env
+.env.*
+!.env.example
+vendor/
+storage/*
+!storage/.htaccess
+venv/
+env/
+.venv/
+node_modules/
+__pycache__/
+*.pyc
+
+# Logs
+*.log
+logs/
+
+# Compilados / build
+build/
+dist/
+*.class
+*.o
+*.exe
+*.dll
+
+# Archivos temporales
+*.tmp
+*.bak
+*~
