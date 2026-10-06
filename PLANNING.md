@@ -193,7 +193,7 @@ Los importes se guardan en **céntimos (enteros)** para evitar errores de redond
 
 - **Precios con IVA incluido (21 %)**. El IVA se desglosa en el resumen y en el pedido.
 - **Envío:** 4,95 €, gratis a partir de 60 € de subtotal.
-- **Descuentos:** códigos de porcentaje (`BIENVENIDA10`, −10 %) y de importe fijo (`ZAP5`, −5 €). Un código por pedido.
+- **Descuentos:** códigos de porcentaje (`BIENVENIDA10`, −10 %) y de importe fijo (`ZAP5`, −5 €). Un código por pedido. Los clientes con sesión iniciada tienen además un 10 % automático (`CLIENTE10`); no se suma al código, se aplica el mayor.
 - **Stock por talla:** no se puede añadir más unidades que el stock disponible. El stock se descuenta al confirmar el pago simulado.
 - **ID de pedido:** `ZAP-AAAAMMDD-XXXX`, único.
 - **Pago simulado:** la tarjeta `4242 4242 4242 4242` se aprueba y la `4000 0000 0000 0002` se rechaza. No se guardan datos de tarjeta, solo los 4 últimos dígitos.

@@ -32,7 +32,7 @@ final class CheckoutController
         ], session_id());
         return $this->view->render($response, 'checkout.php', [
             'pageTitle' => 'Checkout - Zapatero', 'summary' => $summary,
-            'formData' => $_SESSION['shipping_data'] ?? [], 'errors' => [],
+            'formData' => $_SESSION['shipping_data'] ?? $this->defaultsFromAccount(), 'errors' => [],
             'csrfToken' => $_SESSION['_csrf'] ??= bin2hex(random_bytes(32)),
             'success' => null,
         ]);
@@ -56,10 +56,20 @@ final class CheckoutController
             return $this->renderForm($response->withStatus(422), $result['data'], $result['errors'], null, $summary);
         }
 
-        // M4 puede consumir este dato de sesión al crear orders y order_items.
+        // PaymentController (/pago) consume estos datos al crear el pedido; el importe se recalcula allí.
         $_SESSION['shipping_data'] = $result['data'];
         $_SESSION['checkout_quote'] = $summary;
-        return $this->renderForm($response, $result['data'], [], null, $summary, 'Datos de envío validados.');
+        return $response->withHeader('Location', '/pago')->withStatus(303);
+    }
+
+    /** Cliente con sesión: nombre y email de su cuenta como punto de partida (puede cambiarlos). */
+    private function defaultsFromAccount(): array
+    {
+        if (empty($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'customer') {
+            return [];
+        }
+
+        return ['full_name' => (string) ($_SESSION['user_name'] ?? ''), 'email' => (string) ($_SESSION['user_email'] ?? '')];
     }
 
     private function renderForm(Response $response, array $formData, array $errors, ?string $error, ?array $summary = null, ?string $success = null): Response

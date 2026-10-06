@@ -29,6 +29,7 @@ final class CartController
             'pageTitle' => 'Carrito - Zapatero',
             'summary' => $summary,
             'csrfToken' => $_SESSION['_csrf'] ??= bin2hex(random_bytes(32)),
+            'enteredCode' => (string) ($_SESSION['discount_code'] ?? ''),
             ...$flash,
         ]);
     }

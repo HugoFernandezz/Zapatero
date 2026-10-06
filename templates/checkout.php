@@ -6,7 +6,7 @@ $value = static fn (string $field): string => $esc($formData[$field] ?? '');
 <section class="page-heading">
     <p class="eyebrow">Último paso</p>
     <h1>Datos de envío</h1>
-    <p>Prototipo académico: usa exclusivamente datos ficticios. Aquí no se solicitan datos de pago.</p>
+    <p>Prototipo académico: usa exclusivamente datos ficticios. La factura se enviará al email que indiques.</p>
 </section>
 
 <?php if (!empty($success)): ?><p class="notice success" role="status"><?= $esc($success) ?></p><?php endif; ?>
@@ -17,7 +17,7 @@ $value = static fn (string $field): string => $esc($formData[$field] ?? '');
         <input type="hidden" name="_csrf" value="<?= $esc($csrfToken) ?>">
         <div class="form-field">
             <label for="full_name">Nombre y apellidos</label>
-            <input id="full_name" name="full_name" autocomplete="name" maxlength="160" pattern="[\p{L}\p{M} '’-]+" title="Solo letras, espacios, guiones y apóstrofos." required value="<?= $value('full_name') ?>" aria-describedby="error-full_name">
+            <input id="full_name" name="full_name" autocomplete="name" maxlength="160" required value="<?= $value('full_name') ?>" aria-describedby="error-full_name">
             <?php if (isset($errors['full_name'])): ?><small id="error-full_name" class="field-error"><?= $esc($errors['full_name']) ?></small><?php endif; ?>
         </div>
         <div class="form-field">
@@ -38,17 +38,17 @@ $value = static fn (string $field): string => $esc($formData[$field] ?? '');
             </div>
             <div class="form-field">
                 <label for="city">Localidad</label>
-                <input id="city" name="city" autocomplete="address-level2" maxlength="160" pattern="[\p{L}\p{M} '’-]+" title="Solo letras, espacios, guiones y apóstrofos." required value="<?= $value('city') ?>" aria-describedby="error-city">
+                <input id="city" name="city" autocomplete="address-level2" maxlength="160" required value="<?= $value('city') ?>" aria-describedby="error-city">
                 <?php if (isset($errors['city'])): ?><small id="error-city" class="field-error"><?= $esc($errors['city']) ?></small><?php endif; ?>
             </div>
         </div>
         <div class="form-field">
             <label for="province">Provincia</label>
-            <input id="province" name="province" autocomplete="address-level1" maxlength="160" pattern="[\p{L}\p{M} '’-]+" title="Solo letras, espacios, guiones y apóstrofos." required value="<?= $value('province') ?>" aria-describedby="error-province">
+            <input id="province" name="province" autocomplete="address-level1" maxlength="160" required value="<?= $value('province') ?>" aria-describedby="error-province">
             <?php if (isset($errors['province'])): ?><small id="error-province" class="field-error"><?= $esc($errors['province']) ?></small><?php endif; ?>
         </div>
-        <button class="button primary" type="submit">Validar datos de envío</button>
-        <p class="muted">El pedido y el pago simulado se conectarán con el módulo M4.</p>
+        <button class="button primary" type="submit">Continuar al pago</button>
+        <p class="muted">En el siguiente paso pagarás con una tarjeta de prueba. El pedido se crea al confirmar el pago.</p>
     </form>
 
     <aside class="summary-card" aria-label="Resumen del pedido">
