@@ -19,7 +19,7 @@ $value = static fn (string $field): string => $esc($formData[$field] ?? '');
             <strong>Tarjetas de prueba</strong>
             <ul>
                 <li>Cualquier número de tarjeta → pago aprobado</li>
-                <li><code>0000 0000 0000 0000</code> → pago denegado</li>
+                <li><code>4000 0000 0000 0002</code> o <code>0000 0000 0000 0000</code> → pago denegado</li>
             </ul>
             <small>Caducidad futura (p. ej. 12/30) y cualquier CVC de 3 cifras.</small>
         </div>

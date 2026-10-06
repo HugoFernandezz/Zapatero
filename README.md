@@ -28,9 +28,9 @@ Si el fichero de la base de datos no existe, la aplicación lo crea sola en la p
 | Para qué | Dato |
 |---|---|
 | Cliente | `cliente@zapatero.test` / `Cliente1234` (existe desde el primer arranque). Recibe un 10 % de descuento automático (`CLIENTE10`). |
-| Administrador | `ADMIN_EMAIL` / `ADMIN_PASSWORD` del `.env` (en `.env.example`: `admin@zapatero.test` / `admin1234`). Se crea solo al abrir `/login` la primera vez. Entra por `/login` y te lleva a `/admin/pedidos`. |
+| Administrador | `ADMIN_EMAIL` / `ADMIN_PASSWORD` del `.env` (en `.env.example`: `admin@zapatero.test` / `cambia-esta-clave`). Se crea solo al abrir `/login` la primera vez. Entra por `/login` y te lleva a `/admin/pedidos`. |
 | Tarjeta aprobada | Cualquier número de 13 a 19 cifras (p. ej. `4242424242424242`), caducidad futura `MM/AA` y CVC de 3 cifras. |
-| Tarjeta rechazada | `0000000000000000` → el pedido nace «cancelado» y no descuenta stock. |
+| Tarjeta rechazada | `4000 0000 0000 0002` o `0000 0000 0000 0000` → el pedido nace «cancelado» y no descuenta stock. |
 | Códigos de descuento | `ZAP5` (−5 €) y `BIENVENIDA10` (−10 %). |
 | Envío e impuestos | 4,95 € de envío, gratis desde 60 €. IVA del 21 % desglosado del total (precios con IVA incluido). |
 
@@ -57,7 +57,7 @@ Back-office (`/admin`, solo rol `admin`): pedidos con filtros y detalle, cambio 
 
 ## Eventos de negocio
 
-Todos se guardan en la tabla `events` (`type`, `occurred_at` UTC, `session_id`, `user_id`, `payload` JSON validado con `json_valid`). Se registran con `EventService::record()` desde la capa de servicios/controladores. Detalle y ejemplos en [INTEGRACION-M5.md](INTEGRACION-M5.md).
+Todos se guardan en la tabla `events` (`type`, `occurred_at` UTC, `session_id`, `user_id`, `payload` JSON validado con `json_valid`). Se registran con `EventService::record()` desde la capa de servicios/controladores.
 
 | Evento | Cuándo se genera |
 |---|---|
@@ -71,7 +71,9 @@ Todos se guardan en la tabla `events` (`type`, `occurred_at` UTC, `session_id`, 
 | `order.status_changed` | En cada cambio de estado (incluye el estado inicial) |
 | `invoice.sent` / `invoice.failed`, `status_email.sent` / `status_email.failed` | Resultado de cada correo enviado al cliente |
 
-**Consulta y exportación:** `/admin/eventos` lista los eventos con filtros (tipo, fecha, texto) y recuento por tipo. Desde ahí se exportan a **JSON** (`/admin/eventos/exportar/json`) o **CSV** (`/admin/eventos/exportar/csv`), respetando los filtros activos. Esa exportación es el punto de integración previsto para la Tarea 2 (un sistema de análisis o automatización puede leerla periódicamente o leer directamente la tabla `events`).
+**Consulta y exportación:** `/admin/eventos` lista los eventos con filtros (tipo, fecha, texto) y recuento por tipo. Desde ahí se exportan a **JSON** (`/admin/eventos/exportar/json`) o **CSV** (`/admin/eventos/exportar/csv`), respetando los filtros activos.
+
+**API para la Tarea 2:** `GET /api/events` (JSON) y `GET /api/events.csv`, con `?type=` y `?since=` (fecha UTC ISO 8601, p. ej. `2026-10-06T10:00:00Z`) para el sondeo incremental. Si `EVENTS_API_TOKEN` está definido en el `.env`, hay que enviarlo en la cabecera `X-Api-Token`. El `session_id` guardado en `events` es un identificador derivado (hash), nunca el id de sesión real.
 
 ## Arquitectura y modelo de datos
 
@@ -125,7 +127,7 @@ El dominio apunta a la carpeta `/public/` del FTP ([ayuda de DonDominio](https:/
 4. Subir a la raíz del FTP: `src/`, `templates/`, `database/`, `storage/`, `vendor/`, `.htaccess`, y el contenido de nuestra `public/` dentro de `/public/`.
    Ojo: hay dos `.htaccess` con el mismo nombre. Si el de la raíz acaba en `/public/`, toda la web da 403.
    No subir `.git/`, `.env` ni ningún `.sqlite` local.
-5. Crear en la raíz del FTP un `.env` a partir de `.env.example` con `APP_ENV=production`, `APP_DEBUG=false`, un `ADMIN_PASSWORD` propio (no dejes `admin1234` en un servidor público) y el correo: `MAIL_DRIVER=mail` con un `MAIL_FROM` de tu dominio, o `MAIL_DRIVER=smtp` con los datos SMTP de un buzón (ver [Correo](#correo)).
+5. Crear en la raíz del FTP un `.env` a partir de `.env.example` con `APP_ENV=production`, `APP_DEBUG=false`, un `ADMIN_PASSWORD` propio (no dejes `cambia-esta-clave` en un servidor público) y el correo: `MAIL_DRIVER=mail` con un `MAIL_FROM` de tu dominio, o `MAIL_DRIVER=smtp` con los datos SMTP de un buzón (ver [Correo](#correo)).
 6. Dar permisos de escritura a `storage/` con `chmod` desde el cliente FTP (SQLite necesita escribir en la carpeta, no solo en el fichero).
 7. Abrir `http://<dominio>/health`. En la primera petición se crea la base de datos **con el catálogo (12 productos) y el cliente de prueba**, sin ejecutar ningún comando.
 8. *(Opcional)* Para tener pedidos y eventos de demostración en el servidor, sube el `storage/zapatero.sqlite` generado en local con `composer db:init && composer db:demo` (solo contiene datos ficticios; ver más abajo). Hazlo antes de la primera visita, o borra antes el fichero del servidor.

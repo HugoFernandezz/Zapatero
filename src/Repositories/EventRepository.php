@@ -68,6 +68,10 @@ final class EventRepository
             $params[':q1'] = $like;
             $params[':q2'] = $like;
         }
+        if (($filters['since'] ?? '') !== '') {
+            $where[] = 'occurred_at >= :since';
+            $params[':since'] = $filters['since'];
+        }
         if (($filters['from'] ?? '') !== '') {
             $where[] = 'occurred_at >= :from';
             $params[':from'] = $filters['from'] . 'T00:00:00Z';

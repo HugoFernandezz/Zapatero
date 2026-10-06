@@ -18,7 +18,8 @@ final class EventService
         );
         $statement->execute([
             'type' => $type,
-            'session_id' => $sessionId,
+            // Nunca se guarda el id de sesión real (sería un secreto si se exporta): solo un identificador derivado.
+            'session_id' => $sessionId === null ? null : substr(hash('sha256', $sessionId), 0, 16),
             'user_id' => $userId,
             'payload' => json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
         ]);

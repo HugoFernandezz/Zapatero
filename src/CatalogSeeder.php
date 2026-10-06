@@ -21,7 +21,15 @@ final class CatalogSeeder
     public static function run(PDO $pdo): void
     {
         self::seedCatalog($pdo);
+        self::seedDiscountCodes($pdo);
         self::seedTestCustomer($pdo);
+    }
+
+    public static function seedDiscountCodes(PDO $pdo): void
+    {
+        $insert = $pdo->prepare('INSERT OR IGNORE INTO discount_codes (code, type, value) VALUES (:code, :type, :value)');
+        $insert->execute(['code' => 'BIENVENIDA10', 'type' => 'percent', 'value' => 10]);
+        $insert->execute(['code' => 'ZAP5', 'type' => 'fixed', 'value' => 500]);
     }
 
     public static function seedTestCustomer(PDO $pdo): void

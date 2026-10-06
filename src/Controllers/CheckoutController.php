@@ -42,15 +42,19 @@ final class CheckoutController
     {
         $body = (array) $request->getParsedBody();
         if (!isset($_SESSION['_csrf']) || !hash_equals($_SESSION['_csrf'], (string) ($body['_csrf'] ?? ''))) {
-            return $this->renderForm($response->withStatus(400), [], [], 'La sesión del formulario caducó. Recarga el checkout.');
+            $_SESSION['_flash_error'] = 'La sesión del formulario caducó. Inténtalo de nuevo.';
+            return $response->withHeader('Location', '/carrito')->withStatus(303);
         }
-        try { $summary = $this->checkout->start($_SESSION, session_id()); }
-        catch (DomainException $e) {
+        try {
+            $summary = $this->checkout->start($_SESSION, session_id());
+        } catch (DomainException $e) {
             $_SESSION['_flash_error'] = $e->getMessage();
             return $response->withHeader('Location', '/carrito')->withStatus(303);
         }
         $result = $this->checkout->validate($body);
-        if ($result['errors'] !== []) return $this->renderForm($response->withStatus(422), $result['data'], $result['errors'], null, $summary);
+        if ($result['errors'] !== []) {
+            return $this->renderForm($response->withStatus(422), $result['data'], $result['errors'], null, $summary);
+        }
 
         // PaymentController (/pago) consume estos datos al crear el pedido; el importe se recalcula allí.
         $_SESSION['shipping_data'] = $result['data'];
