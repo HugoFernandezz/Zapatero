@@ -565,67 +565,90 @@ select {
     }
 }
 
-/* Soporte e incidencias */
-.support-form {
-    display: grid;
-    gap: 0.8rem;
-    max-width: 650px;
-    margin-bottom: 1.5rem;
+/* ---- M4 · Pago simulado, pedidos y back-office ---- */
+.summary-sub { margin: 1rem 0 0.2rem; font-size: 0.95rem; }
+.test-cards { margin-bottom: 1.2rem; padding: 0.8rem 1rem; background: var(--soft); border: 1px dashed var(--line); border-radius: 0.45rem; font-size: 0.92rem; }
+.test-cards ul { margin: 0.4rem 0; padding-left: 1.2rem; }
+.test-cards code, .data-table code, .page-heading code { padding: 0.05rem 0.35rem; background: #fff; border: 1px solid var(--line); border-radius: 0.25rem; font-size: 0.88em; }
+.order-code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.6em; letter-spacing: 0.02em; }
+
+.badge { display: inline-block; padding: 0.1rem 0.6rem; border-radius: 999px; font-size: 0.8rem; font-weight: 700; white-space: nowrap; background: #eceff1; color: #37474f; }
+.badge-created { background: #eceff1; color: #37474f; }
+.badge-paid_simulated { background: #e3f2fd; color: #0d47a1; }
+.badge-pending_preparation { background: #fff4d6; color: #7a5600; }
+.badge-shipped { background: #e5f4e9; color: #155b36; }
+.badge-incident { background: #ffe3de; color: #8a2618; }
+.badge-cancelled { background: #f1f1f1; color: #6b6b6b; text-decoration: line-through; }
+
+.invoice-actions { display: flex; gap: 0.6rem; margin: 1rem 0; }
+.invoice-sheet { overflow-x: auto; padding-bottom: 2rem; }
+@media print {
+    .prototype-banner, .site-header, .site-footer, .page-heading, .invoice-actions { display: none !important; }
 }
 
-.support-form input,
-.support-form textarea {
-    width: 100%;
-    padding: 0.65rem 0.75rem;
-    color: var(--ink);
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 0.4rem;
-    font: inherit;
-}
-
-.support-form textarea {
-    min-height: 120px;
-    resize: vertical;
-}
-
-.form-error {
-    max-width: 650px;
-    padding: 0.8rem;
-    background: #f8d7da;
-    border-radius: 0.4rem;
-}
-
-.admin-table {
-    width: 100%;
-    margin: 1.5rem 0;
-    border-collapse: collapse;
-    background: var(--surface);
-    border: 1px solid var(--line);
-}
-
-.admin-table th,
-.admin-table td {
-    padding: 0.8rem;
-    border: 1px solid var(--line);
-    text-align: left;
-    vertical-align: top;
-}
-
-.admin-table th {
-    background: var(--soft);
-}
-
-.admin-table pre {
-    margin: 0;
-    white-space: pre-wrap;
-    font: inherit;
-    color: var(--muted);
-}
+.admin-heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; flex-wrap: wrap; }
+.admin-heading form { display: flex; align-items: center; gap: 0.6rem; }
+.admin-login { max-width: 26rem; }
+.status-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0; }
+.chip { padding: 0.3rem 0.8rem; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: 0.88rem; }
+.chip.active { color: #fff; background: var(--accent); border-color: var(--accent); }
+.admin-search { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.admin-search input[type="search"] { min-width: 16rem; }
+.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 0.5rem; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+.data-table th, .data-table td { padding: 0.65rem 0.8rem; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+.data-table th { background: var(--soft); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.data-table tbody tr:last-child td { border-bottom: 0; }
+.pagination { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 1rem 0 2rem; flex-wrap: wrap; }
+.admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; align-items: start; }
+.admin-grid .summary-card { position: static; }
+.admin-section { margin: 2rem 0; }
+.admin-totals { max-width: 22rem; margin-left: auto; }
+.status-form select { width: 100%; }
+.timeline { margin: 0; padding: 0; list-style: none; border-left: 2px solid var(--line); }
+.timeline li { position: relative; display: flex; flex-wrap: wrap; gap: 0.2rem 0.8rem; padding: 0.4rem 0 0.4rem 1.1rem; }
+.timeline li::before { content: ""; position: absolute; left: -0.4rem; top: 0.85rem; width: 0.7rem; height: 0.7rem; border-radius: 50%; background: var(--accent); }
+.timeline time { color: var(--muted); font-size: 0.85rem; min-width: 8.5rem; }
 
 @media (max-width: 900px) {
-    .admin-table {
-        display: block;
-        overflow-x: auto;
-    }
+    .admin-grid { grid-template-columns: 1fr; }
 }
+
+/* --- Cuenta de cliente, login y navegación --- */
+.main-nav { flex-wrap: wrap; }
+.nav-logout { display: inline-flex; align-items: center; gap: 0.6rem; margin: 0; }
+.nav-user { color: var(--ink); font-weight: 700; }
+.nav-link-button { padding: 0; border: 0; background: none; color: inherit; font: inherit; font-weight: 700; cursor: pointer; }
+.nav-link-button:hover { color: var(--accent); }
+.nav-login { padding: 0.35rem 0.9rem; color: #fff; background: var(--accent); border-radius: 0.45rem; }
+.main-nav a.nav-login:hover { color: #fff; background: var(--accent-dark); }
+
+/* --- Seguimiento del pedido --- */
+.tracking { margin: 1.2rem 0 2rem; }
+.tracking-list { margin: 0.8rem 0; padding-left: 1.2rem; display: grid; gap: 0.5rem; }
+
+/* --- Back-office: navegación y productos --- */
+.admin-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 1.2rem; }
+.admin-nav-logout { display: flex; align-items: center; gap: 0.6rem; margin: 0 0 0 auto; }
+.admin-thumb { width: 56px; height: 56px; object-fit: cover; border: 1px solid var(--line); border-radius: 0.35rem; }
+.admin-thumb.large { width: 120px; height: 120px; }
+.row-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.row-actions form { margin: 0; }
+.button.danger { color: #8a2618; border-color: #efc0b8; }
+.button.danger:hover { background: #fff0ed; }
+.product-admin-form { max-width: 44rem; }
+.form-field select, .form-field textarea { min-height: 2.65rem; padding: 0.55rem 0.65rem; border: 1px solid var(--line); border-radius: 0.4rem; font: inherit; background: #fff; }
+.form-field textarea { resize: vertical; }
+.stock-fieldset { margin: 0 0 1.2rem; padding: 0.9rem 1rem; border: 1px solid var(--line); border-radius: 0.5rem; }
+.stock-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr)); gap: 0.7rem; }
+.stock-grid label { display: grid; gap: 0.25rem; font-weight: 700; }
+.stock-grid input { min-height: 2.4rem; padding: 0.4rem 0.5rem; border: 1px solid var(--line); border-radius: 0.4rem; font: inherit; }
+
+/* Soporte del pedido */
+.support-card { position: static; margin-top: 1.25rem; }
+.support-list { margin: 0 0 1rem; padding-left: 1.1rem; }
+.support-list li { margin-bottom: 0.5rem; }
+.support-list p { margin: 0.25rem 0 0; }
+
+/* Acciones de cabecera del back-office */
+.admin-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }

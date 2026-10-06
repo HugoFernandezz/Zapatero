@@ -14,6 +14,9 @@ final class CartService
     private const VAT_DENOMINATOR = 121;
     private const SHIPPING_CENTS = 495;
     private const FREE_SHIPPING_FROM_CENTS = 6000;
+    /** Descuento automático para clientes con sesión iniciada. */
+    public const MEMBER_PERCENT = 10;
+    public const MEMBER_CODE = 'CLIENTE10';
 
     public function __construct(
         private readonly CartRepository $repository,
@@ -34,6 +37,7 @@ final class CartService
             throw new DomainException('No hay suficientes unidades disponibles para esa talla.');
         }
         $session['cart'][$variantId] = $newQuantity;
+        $this->persist($session);
         if (is_callable($this->recordEvent)) {
             ($this->recordEvent)('cart.item_added', [
                 'variant_id' => $variantId,
@@ -50,6 +54,7 @@ final class CartService
         }
         if ($quantity === 0) {
             unset($session['cart'][$variantId]);
+            $this->persist($session);
             return;
         }
         if ($quantity < 1 || $quantity > 99) {
@@ -60,11 +65,46 @@ final class CartService
             throw new DomainException('La cantidad supera el stock actual de esa talla.');
         }
         $session['cart'][$variantId] = $quantity;
+        $this->persist($session);
     }
 
     public function remove(array &$session, int $variantId): void
     {
         unset($session['cart'][$variantId]);
+        $this->persist($session);
+    }
+
+    /** Con sesión iniciada el carrito también se guarda en la base de datos para no perderlo. */
+    private function persist(array $session): void
+    {
+        $userId = (int) ($session['user_id'] ?? 0);
+        if ($userId > 0) {
+            $this->repository->replaceUserCart($userId, (array) ($session['cart'] ?? []));
+        }
+    }
+
+    /**
+     * Al iniciar sesión: une el carrito que ya había en la sesión (como invitado) con el guardado del usuario,
+     * respetando el stock actual, y deja el resultado en sesión y en base de datos.
+     */
+    public function mergeUserCart(array &$session, int $userId): void
+    {
+        $merged = $this->repository->userCart($userId);
+        foreach ((array) ($session['cart'] ?? []) as $variantId => $quantity) {
+            $merged[(int) $variantId] = ($merged[(int) $variantId] ?? 0) + (int) $quantity;
+        }
+
+        $valid = [];
+        foreach ($merged as $variantId => $quantity) {
+            $variant = $this->repository->variant((int) $variantId);
+            if ($variant === null || (int) $variant['stock'] < 1) {
+                continue;
+            }
+            $valid[(int) $variantId] = max(1, min(99, (int) $quantity, (int) $variant['stock']));
+        }
+
+        $session['cart'] = $valid;
+        $this->repository->replaceUserCart($userId, $valid);
     }
 
     public function summary(array &$session, ?string $discountCode = null): array
@@ -89,6 +129,13 @@ final class CartService
 
         $subtotal = array_sum(array_column($items, 'line_total_cents'));
         [$discount, $appliedCode] = $this->discount($discountCode, $subtotal);
+        // Cliente con sesión iniciada: descuento automático; si el código manual da más, se aplica ese (no se suman).
+        if ($subtotal > 0 && (int) ($session['user_id'] ?? 0) > 0 && ($session['user_role'] ?? '') === 'customer') {
+            $member = (int) round($subtotal * self::MEMBER_PERCENT / 100, 0, PHP_ROUND_HALF_UP);
+            if ($member > $discount) {
+                [$discount, $appliedCode] = [$member, self::MEMBER_CODE];
+            }
+        }
         $shipping = $subtotal === 0 || $subtotal >= self::FREE_SHIPPING_FROM_CENTS ? 0 : self::SHIPPING_CENTS;
         $taxableTotal = max(0, $subtotal - $discount) + $shipping;
         // Redondeo comercial a céntimos; IVA desglosado de importes que ya lo incluyen.
@@ -105,21 +152,14 @@ final class CartService
         ];
     }
 
-    public function isValidDiscount(string $code): bool
-    {
-        return $this->repository->discountCode($code) !== null;
-    }
-
     private function discount(?string $code, int $subtotal): array
     {
         $code = strtoupper(trim((string) $code));
-        $row = $code === '' || $subtotal === 0 ? null : $this->repository->discountCode($code);
-        if ($row === null) {
-            return [0, null];
-        }
-        $amount = $row['type'] === 'percent'
-            ? (int) round($subtotal * (int) $row['value'] / 100, 0, PHP_ROUND_HALF_UP)
-            : min((int) $row['value'], $subtotal);
-        return [$amount, $row['code']];
+        if ($code === '' || $subtotal === 0) return [0, null];
+        return match ($code) {
+            'BIENVENIDA10' => [(int) round($subtotal * 10 / 100, 0, PHP_ROUND_HALF_UP), $code],
+            'ZAP5' => [min(500, $subtotal), $code],
+            default => [0, null],
+        };
     }
 }

@@ -4,141 +4,68 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Repositories\SupportRepository;
-use InvalidArgumentException;
+use App\Repositories\OrderRepository;
 
+/**
+ * Solicitudes de soporte / postventa de un pedido. Guarda el ticket (support_tickets) y registra el
+ * evento de negocio `support.requested`. El texto libre del cliente NO se copia al evento (solo su longitud).
+ */
 final class SupportService
 {
+    public const MIN_MESSAGE = 10;
+    public const MAX_MESSAGE = 1000;
+    /** Tope por pedido para evitar abuso del formulario. */
+    public const MAX_TICKETS_PER_ORDER = 5;
+
+    /** Clave => motivo mostrado. */
+    public const SUBJECTS = [
+        'delivery' => 'Estado o retraso de la entrega',
+        'damaged' => 'Producto dañado o defectuoso',
+        'size' => 'Cambio de talla',
+        'invoice' => 'Problema con la factura',
+        'other' => 'Otra consulta',
+    ];
+
     public function __construct(
-        private readonly SupportRepository $support,
+        private readonly OrderRepository $orders,
         private readonly EventService $events
-    ) {
-    }
+    ) {}
 
-    public function createRequest(
-        ?string $orderCode,
-        string $subject,
-        string $message
-    ): int {
-        $orderId = null;
-        $normalizedOrderCode = null;
-
-        if ($orderCode !== null && trim($orderCode) !== '') {
-            $normalizedOrderCode = strtoupper(trim($orderCode));
-
-            $order = $this->support->findOrderByCode(
-                $normalizedOrderCode
-            );
-
-            if ($order === null) {
-                throw new InvalidArgumentException('El pedido indicado no existe.');
-            }
-
-            $orderId = (int) $order['id'];
-        }
-
-        $subject = trim($subject);
-        $message = trim($message);
-
-        if ($subject === '') {
-            throw new InvalidArgumentException('El asunto es obligatorio.');
-        }
-
-        if ($message === '') {
-            throw new InvalidArgumentException('El mensaje es obligatorio.');
-        }
-
-        $ticketId = $this->support->createTicket(
-            $orderId,
-            $subject,
-            $message
-        );
-
-        $this->events->record(
-            'support.requested',
-            [
-                'order_code' => $normalizedOrderCode,
-                'motivo' => $message,
-                'ticket_id' => $ticketId,
-            ]
-        );
-
-        return $ticketId;
-    }
-
-    public function allTickets(): array
+    /**
+     * @param array $order fila de pedido (OrderRepository::find)
+     * @return array{errors: array<string,string>, ticket_id: ?int}
+     */
+    public function request(array $order, array $input, ?string $sessionId, ?int $userId = null): array
     {
-        return $this->support->allTickets();
-    }
+        $key = (string) ($input['subject'] ?? '');
+        $message = trim((string) ($input['message'] ?? ''));
+        $errors = [];
 
-    public function createIncident(
-        int $ticketId
-    ): void {
-        $ticket = $this->support->findTicket($ticketId);
-
-        if ($ticket === null) {
-            throw new InvalidArgumentException('La incidencia no existe.');
+        if (!isset(self::SUBJECTS[$key])) {
+            $errors['subject'] = 'Elige un motivo de la lista.';
+        }
+        $length = mb_strlen($message);
+        if ($length < self::MIN_MESSAGE) {
+            $errors['message'] = 'Cuéntanos un poco más (mínimo ' . self::MIN_MESSAGE . ' caracteres).';
+        } elseif ($length > self::MAX_MESSAGE) {
+            $errors['message'] = 'El mensaje es demasiado largo (máximo ' . self::MAX_MESSAGE . ' caracteres).';
+        }
+        if ($errors === [] && $this->orders->countTickets((int) $order['id']) >= self::MAX_TICKETS_PER_ORDER) {
+            $errors['message'] = 'Este pedido ya tiene el máximo de solicitudes abiertas. Te responderemos en cuanto sea posible.';
+        }
+        if ($errors !== []) {
+            return ['errors' => $errors, 'ticket_id' => null];
         }
 
-        if ($ticket['order_id'] === null) {
-            throw new InvalidArgumentException(
-                'La incidencia debe estar asociada a un pedido.'
-            );
-        }
+        $ticketId = $this->orders->insertTicket((int) $order['id'], self::SUBJECTS[$key], $message);
+        $this->events->record('support.requested', [
+            'order_code' => (string) $order['code'],
+            'ticket_id' => $ticketId,
+            'subject_key' => $key,
+            'subject' => self::SUBJECTS[$key],
+            'message_length' => $length,
+        ], $sessionId, $userId);
 
-        $order = $this->support->setOrderIncident(
-            (int) $ticket['order_id']
-        );
-
-        if ($order === null) {
-            throw new InvalidArgumentException(
-                'El estado actual del pedido no permite crear una incidencia.'
-            );
-        }
-
-        $this->events->record(
-            'incident.created',
-            [
-                'order_code' => $order['code'],
-                'motivo' => $ticket['message'],
-                'ticket_id' => $ticketId,
-            ]
-        );
-    }
-
-    public function resolveIncident(
-        int $ticketId
-    ): void {
-        $ticket = $this->support->findTicket($ticketId);
-
-        if ($ticket === null) {
-            throw new InvalidArgumentException('La incidencia no existe.');
-        }
-
-        if ($ticket['order_id'] === null) {
-            throw new InvalidArgumentException(
-                'La incidencia no está asociada a un pedido.'
-            );
-        }
-
-        $order = $this->support->resolveIncident(
-            (int) $ticket['order_id']
-        );
-
-        if ($order === null) {
-            throw new InvalidArgumentException(
-                'El pedido no está actualmente en estado incident.'
-            );
-        }
-
-        $this->support->closeTicket($ticketId);
-
-        $this->events->record(
-            'incident.resolved',
-            [
-                'order_code' => $order['code'],
-                'ticket_id' => $ticketId,
-            ]
-        );
+        return ['errors' => [], 'ticket_id' => $ticketId];
     }
 }

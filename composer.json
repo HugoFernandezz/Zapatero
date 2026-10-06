@@ -19,6 +19,8 @@
             "Composer\\Config::disableProcessTimeout",
             "php -S localhost:8000 -t public"
         ],
-        "db:init": "php database/init.php"
+        "db:init": "php database/init.php",
+        "db:demo": "php database/demo.php",
+        "test": "php tests/smoke.php"
     }
 }
