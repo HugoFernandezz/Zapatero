@@ -2,7 +2,7 @@
 
 Prototipo académico de eCommerce (SIE, Tarea 1). **Sin actividad comercial real**: los pagos son simulados y todos los datos son ficticios. La propia web lo indica en una franja visible en todas las páginas.
 
-- **URL pública:** _(completar con la URL del hosting antes de entregar)_
+- **URL pública:** https://www.zapatero.onl
 - **Stack:** PHP 8.1+ · Slim 4 · SQLite (PDO) · plantillas PHP. Justificación y alternativas en [PLANNING.md](PLANNING.md).
 
 ## Requisitos

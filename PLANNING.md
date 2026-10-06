@@ -301,7 +301,7 @@ La **documentación** se reparte entre todos: README (M1), memoria (secciones po
 - [x] URL pública de la aplicación desplegada: https://www.zapatero.onl
 - [ ] Repositorio GitHub con commits de los 5 miembros
 - [ ] Zip del código fuente en el Campus Virtual
-- [ ] README: instalación, ejecución, usuarios de prueba, limitaciones conocidas
+- [x] README: instalación, ejecución, usuarios de prueba, limitaciones conocidas
 - [ ] Memoria PDF (5-6 páginas):
   1. Caso de empresa y justificación de la arquitectura y las tecnologías (con alternativas)
   2. Modelo de datos
