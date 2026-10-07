@@ -28,7 +28,7 @@ Si el fichero de la base de datos no existe, la aplicación lo crea sola en la p
 | Para qué | Dato |
 |---|---|
 | Cliente | `cliente@zapatero.test` / `Cliente1234` (existe desde el primer arranque). Recibe un 10 % de descuento automático (`CLIENTE10`). |
-| Administrador | `ADMIN_EMAIL` / `ADMIN_PASSWORD` del `.env` (en `.env.example`: `admin@zapatero.test` / `cambia-esta-clave`). Se crea solo al abrir `/login` la primera vez. Entra por `/login` y te lleva a `/admin/pedidos`. |
+| Administrador | `admin@zapatero.test` / `1234` (valores de `ADMIN_EMAIL` / `ADMIN_PASSWORD` en `.env.example`). Se crea solo al abrir `/login` la primera vez. Entra por `/login` y te lleva a `/admin/pedidos`. |
 | Tarjeta aprobada | Cualquier número de 13 a 19 cifras (p. ej. `4242424242424242`), caducidad futura `MM/AA` y CVC de 3 cifras. |
 | Tarjeta rechazada | `4000 0000 0000 0002` o `0000 0000 0000 0000` → el pedido nace «cancelado» y no descuenta stock. |
 | Códigos de descuento | `ZAP5` (−5 €) y `BIENVENIDA10` (−10 %). |
@@ -127,7 +127,7 @@ El dominio apunta a la carpeta `/public/` del FTP ([ayuda de DonDominio](https:/
 4. Subir a la raíz del FTP: `src/`, `templates/`, `database/`, `storage/`, `vendor/`, `.htaccess`, y el contenido de nuestra `public/` dentro de `/public/`.
    Ojo: hay dos `.htaccess` con el mismo nombre. Si el de la raíz acaba en `/public/`, toda la web da 403.
    No subir `.git/`, `.env` ni ningún `.sqlite` local.
-5. Crear en la raíz del FTP un `.env` a partir de `.env.example` con `APP_ENV=production`, `APP_DEBUG=false`, un `ADMIN_PASSWORD` propio (no dejes `cambia-esta-clave` en un servidor público) y el correo: `MAIL_DRIVER=mail` con un `MAIL_FROM` de tu dominio, o `MAIL_DRIVER=smtp` con los datos SMTP de un buzón (ver [Correo](#correo)).
+5. Crear en la raíz del FTP un `.env` a partir de `.env.example` con `APP_ENV=production`, `APP_DEBUG=false`, un `ADMIN_PASSWORD` propio (la clave de prueba `1234` es débil: no la dejes en un servidor público real) y el correo: `MAIL_DRIVER=mail` con un `MAIL_FROM` de tu dominio, o `MAIL_DRIVER=smtp` con los datos SMTP de un buzón (ver [Correo](#correo)).
 6. Dar permisos de escritura a `storage/` con `chmod` desde el cliente FTP (SQLite necesita escribir en la carpeta, no solo en el fichero).
 7. Abrir `http://<dominio>/health`. En la primera petición se crea la base de datos **con el catálogo (12 productos) y el cliente de prueba**, sin ejecutar ningún comando.
 8. *(Opcional)* Para tener pedidos y eventos de demostración en el servidor, sube el `storage/zapatero.sqlite` generado en local con `composer db:init && composer db:demo` (solo contiene datos ficticios; ver más abajo). Hazlo antes de la primera visita, o borra antes el fichero del servidor.
@@ -143,7 +143,7 @@ Para actualizar, basta con volver a subir los ficheros cambiados (y `vendor/` si
 - Las solicitudes de soporte se guardan y se muestran al administrador en el detalle del pedido, pero no hay bandeja de tickets ni respuesta desde la aplicación (el estado queda en «abierta»).
 - La exportación de eventos exige sesión de administrador (no hay API con token para sistemas externos).
 - El stock se descuenta al pagar, no al añadir al carrito: dos clientes pueden tener la misma última unidad en el carrito y el segundo en pagar verá el aviso.
-- No hay recuperación de contraseña ni límite de intentos de inicio de sesión.
+- No hay recuperación de contraseña ni límite de intentos de inicio de sesión. La cuenta de administrador de prueba usa una clave débil (`1234`), solo aceptable en un prototipo con datos ficticios.
 - El administrador se crea desde el `.env` solo la primera vez; cambiar `ADMIN_PASSWORD` después no actualiza la contraseña ya guardada.
 - El envío de correo depende de un servidor SMTP externo; sin él se usa el modo `log`.
 - Los tests son un test de humo del flujo principal, no una batería exhaustiva.
