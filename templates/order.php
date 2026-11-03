@@ -69,6 +69,18 @@ $statusUrl = '/pedido/' . rawurlencode((string) $o['code']) . '/estado';
 </section>
 
 <?php if ($paid): ?>
+<?php if (preg_match('/^[A-Za-z][A-Za-z0-9_]{4,31}$/', (string) ($_ENV['TELEGRAM_BOT_USERNAME'] ?? '')) === 1): ?>
+<section id="telegram" class="summary-card telegram-card" aria-label="Avisos por Telegram">
+    <div>
+        <h2>Recibe los avisos de tu pedido por Telegram</h2>
+        <p class="muted">Pulsa el botón, abre el chat y toca «Iniciar». En menos de un minuto recibirás la confirmación. El enlace es personal, de un solo uso y caduca en 30 minutos. Prototipo académico.</p>
+    </div>
+    <form method="post" action="/pedido/<?= rawurlencode((string) $o['code']) ?>/telegram" target="_blank">
+        <input type="hidden" name="_csrf" value="<?= $esc($csrfToken ?? '') ?>">
+        <button class="button-telegram" type="submit"><span aria-hidden="true">✈</span> Recibir avisos por Telegram</button>
+    </form>
+</section>
+<?php endif; ?>
 <section id="soporte" class="summary-card support-card" aria-label="Soporte del pedido">
     <h2>¿Necesitas ayuda con este pedido?</h2>
     <p class="muted">Cuéntanos qué ha pasado y te responderemos por email. Prototipo académico: no escribas datos personales reales.</p>

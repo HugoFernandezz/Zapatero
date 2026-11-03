@@ -1,0 +1,930 @@
+{
+  "name": "Zapatero · WF3 Telegram: vinculación de clientes y ejecución de acciones aprobadas",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "72a165d9-6b19-5f86-970d-8ecd072148a1",
+      "name": "Cada minuto (Telegram)",
+      "notes": "Flujo A: el cliente escribe /start CÓDIGO_PEDIDO al bot y queda vinculado a su pedido.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKOFFICE_BASE_URL }}/bo/api/v1/state/tg_offset",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.BO_API_TOKEN }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        0
+      ],
+      "id": "7ab78d65-6afd-5386-8690-24c4dd5c0693",
+      "name": "Leer offset de Telegram",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "const res = $input.first().json;\nif (!String($env.TELEGRAM_BOT_TOKEN || '').trim()) return [];     // sin bot configurado: el flujo no hace nada (ni falla)\nif (res.statusCode !== 200) throw new Error('No se pudo leer el offset de Telegram (HTTP ' + res.statusCode + ')');\nconst raw = res.body && res.body.value;\nreturn [{ json: { offset: /^\\d+$/.test(String(raw ?? '')) ? Number(raw) : 0 } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ],
+      "id": "dc228754-7068-51e2-a6de-2471a8f4e77e",
+      "name": "Preparar petición a Telegram"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/getUpdates?offset={{ $json.offset }}&timeout=0&allowed_updates=%5B%22message%22%5D",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        0
+      ],
+      "id": "2a4e1f92-f2d9-5a65-a551-c9c29136ea69",
+      "name": "Pedir mensajes a Telegram",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "const res = $input.first().json;\nif (res.statusCode !== 200 || !res.body || res.body.ok !== true)\n  throw new Error('Telegram respondió HTTP ' + res.statusCode + ' (¿token del bot correcto?): ' + JSON.stringify((res.body && res.body.description) ?? null));\nconst updates = res.body.result || [];\nif (!updates.length) return [];\nconst next_offset = Math.max(...updates.map(u => u.update_id)) + 1;\nreturn updates.map(u => {\n  const m = u.message || {};\n  const text = String(m.text || '').trim();\n  const chat_id = m.chat && m.chat.id !== undefined ? String(m.chat.id) : null;\n  const priv = m.chat && m.chat.type === 'private';\n  const mm = text.match(/^\\/start(?:@\\w+)?\\s+([0-9a-f]{32})$/);  // token de un solo uso del enlace t.me\n  let kind = 'ignore';\n  if (chat_id && priv) kind = mm ? 'link' : (/^\\/(start|help)/i.test(text) ? 'help' : 'ignore');\n  return { json: { kind, chat_id, token: mm ? mm[1] : null, order_code: null, update_id: u.update_id, next_offset } };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        0
+      ],
+      "id": "29841730-a5da-5bee-8223-4a87a84e2934",
+      "name": "Extraer mensajes",
+      "notes": "Solo chats privados. Calcula el siguiente offset para no releer mensajes.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1200,
+        0
+      ],
+      "id": "6434541e-b4e9-5e25-a098-9e71913847bc",
+      "name": "Un mensaje cada vez"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "53d22772-197c-598d-bb96-f0ed8cb6b5aa",
+                    "leftValue": "={{ $json.kind }}",
+                    "rightValue": "link",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "link"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "918f01c9-fb89-50ce-92c4-078240c654ed",
+                    "leftValue": "={{ $json.kind }}",
+                    "rightValue": "help",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "help"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "9e4faf61-a37a-5f8b-a220-63cfceb12d90",
+                    "leftValue": "={{ $json.kind }}",
+                    "rightValue": "ignore",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ignore"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1440,
+        0
+      ],
+      "id": "ce557be8-c543-5139-bc13-0d2fa0ca4313",
+      "name": "Enrutar mensaje"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKOFFICE_BASE_URL }}/bo/api/v1/telegram/link",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.BO_API_TOKEN }}"
+            }
+          ]
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ token: $json.token, chat_id: $json.chat_id }) }}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1680,
+        -140
+      ],
+      "id": "02606d98-4ec8-553e-9567-fb42c44a5c1f",
+      "name": "Vincular chat en el back-office",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const m = $('Enrutar mensaje').item.json;\nconst r = $input.item.json;\nconst order = r.body && r.body.order_code ? r.body.order_code : null;\nlet text, linked = false;\nif (r.statusCode === 200) { linked = true; text = 'Listo: a partir de ahora recibirás por aquí los avisos del pedido ' + order + '.'; }\nelse if (r.statusCode === 409) text = 'Tu pedido aún se está sincronizando. Espera un minuto y vuelve a pulsar el botón de Telegram en la página de tu pedido.';\nelse if (r.statusCode === 410) text = 'Este enlace ya se usó o ha caducado. Pulsa de nuevo el botón de Telegram en la página de tu pedido para obtener uno nuevo.';\nelse if (r.statusCode === 404 || r.statusCode === 422) text = 'Este enlace no es válido. Pulsa el botón de Telegram en la página de tu pedido.';\nelse text = 'Ahora mismo no puedo vincular el pedido. Inténtalo de nuevo en unos minutos.';\n// El token no se arrastra a los nodos siguientes (ya es de un solo uso, pero no hace falta conservarlo).\nreturn { json: { ...m, token: null, order_code: order, linked, link_status: r.statusCode ?? null, reply: { chat_id: m.chat_id, text: 'Zapatero (prototipo académico, sin actividad comercial real)\\n' + text } } };\n",
+        "mode": "runOnceForEachItem"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        -140
+      ],
+      "id": "36559f76-ce92-5042-9c33-6f0e3e7a29d6",
+      "name": "Preparar respuesta de vinculación"
+    },
+    {
+      "parameters": {
+        "jsCode": "const m = $input.item.json;\nreturn { json: { ...m, token: null, linked: false, reply: { chat_id: m.chat_id,\n  text: 'Zapatero (prototipo académico, sin actividad comercial real)\\nPara recibir avisos de tu pedido, abre la página de tu pedido en la web de Zapatero y pulsa el botón «Recibir avisos por Telegram». El enlace es personal y de un solo uso.' } } };\n",
+        "mode": "runOnceForEachItem"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        80
+      ],
+      "id": "9c704ffa-48c3-5143-9a86-8c6815a5041a",
+      "name": "Preparar ayuda"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.reply) }}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2160,
+        -40
+      ],
+      "id": "c5b09faf-aa76-593b-ac3d-4640b576d81e",
+      "name": "Responder por Telegram",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const prev = $('Enrutar mensaje').item.json;\nconst r = $input.item.json;\nconst sent = r.statusCode === 200 && r.body && r.body.ok === true;\nreturn { json: { kind: prev.kind, order_code: prev.order_code, next_offset: prev.next_offset, sent } };",
+        "mode": "runOnceForEachItem"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        -40
+      ],
+      "id": "a28532c8-f1c0-5451-81e8-c7a7929edad5",
+      "name": "Resultado mensaje"
+    },
+    {
+      "parameters": {
+        "jsCode": "const m = $input.item.json;\nreturn { json: { kind: 'ignore', order_code: null, next_offset: m.next_offset, sent: false } };",
+        "mode": "runOnceForEachItem"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        260
+      ],
+      "id": "e13ba617-e088-5d00-b672-85a299d0cbb4",
+      "name": "Resultado ignorado"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all().map(i => i.json);\nconst next = Math.max(...items.map(i => i.next_offset).filter(Number.isInteger));\nreturn [{ json: { value: String(next), linked: items.filter(i => i.kind === 'link' && i.sent).length, total: items.length } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        -260
+      ],
+      "id": "cd585754-bbeb-5969-8dee-d4fdc5c9d297",
+      "name": "Calcular nuevo offset"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKOFFICE_BASE_URL }}/bo/api/v1/state/tg_offset",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.BO_API_TOKEN }}"
+            }
+          ]
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ value: $json.value }) }}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1680,
+        -260
+      ],
+      "id": "07e7b286-84d2-52e5-930c-dd06d62b2da1",
+      "name": "Guardar offset de Telegram",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        700
+      ],
+      "id": "e37e8e50-5849-5f01-b67f-e5406420067d",
+      "name": "Cada minuto (acciones)",
+      "notes": "Flujo B: solo ejecuta propuestas que una persona haya APROBADO en /bo/agente.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKOFFICE_BASE_URL }}/bo/api/v1/agent-actions?status=approved",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.BO_API_TOKEN }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        700
+      ],
+      "id": "53dcd4f0-c5b3-5414-bd93-877608625614",
+      "name": "Leer acciones aprobadas",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "const res = $input.first().json;\nif (res.statusCode !== 200) throw new Error('No se pudieron leer las acciones aprobadas (HTTP ' + res.statusCode + ')');\nconst actions = (res.body && res.body.actions) || [];\nreturn actions.map(a => ({ json: { action: a } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        700
+      ],
+      "id": "3ea17e74-2050-567e-9c28-35d2cc97a24a",
+      "name": "Separar acciones"
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        720,
+        700
+      ],
+      "id": "f83c4ee8-2f6d-530f-aa36-7951b1681cdf",
+      "name": "Una acción cada vez"
+    },
+    {
+      "parameters": {
+        "jsCode": "const a = $input.item.json.action;\nconst hasBot = !!String($env.TELEGRAM_BOT_TOKEN || '').trim();\nconst prefix = 'Zapatero (prototipo académico, sin actividad comercial real)';\nif (a.action_type === 'customer_message' && a.telegram_chat_id && hasBot) {\n  const text = prefix + '\\nPedido ' + a.order_code + ':\\n' + String(a.action.message || '').slice(0, 800);\n  return { json: { action_id: a.id, mode: 'telegram', reply: { chat_id: String(a.telegram_chat_id), text } } };\n}\nlet note;\nif (a.action_type === 'customer_message') note = 'Modo simulado: el cliente no tiene Telegram vinculado' + (hasBot ? '' : ' (o el bot no está configurado)') + '. Mensaje no enviado.';\nelse if (a.action_type === 'status_change_proposal') note = 'Modo simulado: cambio de estado propuesto a «' + a.action.new_status + '». Queda como tarea para aplicarlo manualmente en /admin.';\nelse if (a.action_type === 'internal_task') note = 'Modo simulado: tarea interna registrada: ' + String(a.action.task || '').slice(0, 200);\nelse note = 'Sin acción que ejecutar.';\nreturn { json: { action_id: a.id, mode: 'simulated', report: { result: 'simulated', note } } };",
+        "mode": "runOnceForEachItem"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        700
+      ],
+      "id": "d365710d-1216-590e-be77-fd264931de3b",
+      "name": "Preparar ejecución",
+      "notes": "Solo customer_message con chat vinculado se envía de verdad; el resto se ejecuta en modo simulado (reversible).",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ed81852d-9fda-535d-8ffb-6b5c781142fc",
+              "leftValue": "={{ $json.mode }}",
+              "rightValue": "telegram",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1200,
+        700
+      ],
+      "id": "7ac8878b-18e9-5a12-b497-332cf1e5fee3",
+      "name": "¿Enviar por Telegram?"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.reply) }}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1440,
+        620
+      ],
+      "id": "1953b0a2-0a65-5c14-b4ac-59ed0ed24c13",
+      "name": "Enviar mensaje al cliente",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput",
+      "notes": "Acción sensible: solo llega aquí tras la aprobación humana registrada.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const prev = $('Preparar ejecución').item.json;\nconst r = $input.item.json;\nconst ok = r.statusCode === 200 && r.body && r.body.ok === true;\nconst report = ok ? { result: 'sent', note: 'Enviado por Telegram (message_id ' + (r.body.result && r.body.result.message_id) + ').' }\n  : { result: 'failed', note: 'Telegram no entregó el mensaje: ' + String((r.body && r.body.description) || r.statusCode || 'sin respuesta').slice(0, 150) };\nreturn { json: { action_id: prev.action_id, mode: 'telegram', report } };",
+        "mode": "runOnceForEachItem"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        620
+      ],
+      "id": "4f5a2d64-d6a7-590b-b6a6-eab5f50899aa",
+      "name": "Informe del envío"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKOFFICE_BASE_URL }}/bo/api/v1/agent-actions/{{ $json.action_id }}/executed",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.BO_API_TOKEN }}"
+            }
+          ]
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.report) }}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1920,
+        700
+      ],
+      "id": "c0d274c6-b3ac-5d10-9cea-045c4cb979d7",
+      "name": "Informar ejecución al back-office",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput",
+      "notes": "Cierra el ciclo: executed / executed_simulated / execution_failed.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const prev = $('Preparar ejecución').item.json;\nconst r = $input.item.json;\nreturn { json: { action_id: prev.action_id, mode: prev.mode, http: r.statusCode ?? null, final_status: r.body && r.body.status } };",
+        "mode": "runOnceForEachItem"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        700
+      ],
+      "id": "c6fe5af8-edef-56b5-8166-e702adcd3a3b",
+      "name": "Resultado ejecución"
+    }
+  ],
+  "connections": {
+    "Cada minuto (Telegram)": {
+      "main": [
+        [
+          {
+            "node": "Leer offset de Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer offset de Telegram": {
+      "main": [
+        [
+          {
+            "node": "Preparar petición a Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar petición a Telegram": {
+      "main": [
+        [
+          {
+            "node": "Pedir mensajes a Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pedir mensajes a Telegram": {
+      "main": [
+        [
+          {
+            "node": "Extraer mensajes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer mensajes": {
+      "main": [
+        [
+          {
+            "node": "Un mensaje cada vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Un mensaje cada vez": {
+      "main": [
+        [
+          {
+            "node": "Calcular nuevo offset",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enrutar mensaje",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrutar mensaje": {
+      "main": [
+        [
+          {
+            "node": "Vincular chat en el back-office",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Preparar ayuda",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resultado ignorado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vincular chat en el back-office": {
+      "main": [
+        [
+          {
+            "node": "Preparar respuesta de vinculación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar respuesta de vinculación": {
+      "main": [
+        [
+          {
+            "node": "Responder por Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar ayuda": {
+      "main": [
+        [
+          {
+            "node": "Responder por Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Responder por Telegram": {
+      "main": [
+        [
+          {
+            "node": "Resultado mensaje",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resultado mensaje": {
+      "main": [
+        [
+          {
+            "node": "Un mensaje cada vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resultado ignorado": {
+      "main": [
+        [
+          {
+            "node": "Un mensaje cada vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular nuevo offset": {
+      "main": [
+        [
+          {
+            "node": "Guardar offset de Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cada minuto (acciones)": {
+      "main": [
+        [
+          {
+            "node": "Leer acciones aprobadas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer acciones aprobadas": {
+      "main": [
+        [
+          {
+            "node": "Separar acciones",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separar acciones": {
+      "main": [
+        [
+          {
+            "node": "Una acción cada vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Una acción cada vez": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Preparar ejecución",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar ejecución": {
+      "main": [
+        [
+          {
+            "node": "¿Enviar por Telegram?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Enviar por Telegram?": {
+      "main": [
+        [
+          {
+            "node": "Enviar mensaje al cliente",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Informar ejecución al back-office",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar mensaje al cliente": {
+      "main": [
+        [
+          {
+            "node": "Informe del envío",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Informe del envío": {
+      "main": [
+        [
+          {
+            "node": "Informar ejecución al back-office",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Informar ejecución al back-office": {
+      "main": [
+        [
+          {
+            "node": "Resultado ejecución",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resultado ejecución": {
+      "main": [
+        [
+          {
+            "node": "Una acción cada vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

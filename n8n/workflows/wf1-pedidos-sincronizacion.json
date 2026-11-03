@@ -1,0 +1,1128 @@
+{
+  "name": "Zapatero · WF1 Pedidos y sincronización (tienda → back-office)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e17616e4-885c-500b-9cdc-624da6ff204e",
+      "name": "Cada minuto",
+      "notes": "Disparador 1: sondeo (pull) de eventos nuevos de la tienda cada minuto.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKOFFICE_BASE_URL }}/bo/api/v1/state/wf1_cursor",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.BO_API_TOKEN }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        0
+      ],
+      "id": "55fb51de-0ca0-578a-bd9d-374ef5fdf7c2",
+      "name": "Leer cursor",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "notes": "Último cursor_id procesado, guardado en el back-office.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const res = $input.item.json;\nif (res.statusCode !== 200) {\n  throw new Error('No se pudo leer el cursor del back-office (HTTP ' + res.statusCode + '): ' + JSON.stringify(res.body ?? res.statusMessage ?? null));\n}\nconst raw = res.body && res.body.value;\nconst after = /^\\d+$/.test(String(raw ?? '')) ? Number(raw) : 0;\nreturn { json: { after_id: after } };",
+        "mode": "runOnceForEachItem"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ],
+      "id": "245f2248-cbae-5bee-9daa-31303e113281",
+      "name": "Preparar consulta"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.ZAPATERO_BASE_URL }}/api/v1/events?after_id={{ $json.after_id }}&limit=50",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.ZAPATERO_API_TOKEN }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        0
+      ],
+      "id": "5a28315d-aac3-521f-9463-69d05fa2b882",
+      "name": "Pedir eventos nuevos",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "notes": "API de eventos de la tienda (contrato v1).",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const res = $input.first().json;\nif (res.statusCode !== 200) {\n  throw new Error('La API de eventos respondió HTTP ' + res.statusCode + ': ' + JSON.stringify(res.body ?? res.statusMessage ?? null));\n}\nconst body = res.body || {};\nconst events = Array.isArray(body.events) ? body.events : [];\nconst SUPPORTED = ['order.created', 'order.status_changed'];\nconst out = events\n  .filter(e => SUPPORTED.includes(e.type))\n  .map(e => ({ json: { source: 'poll', event: { ...e, cursor_id: e.cursor_id }, batch_next_cursor: body.next_after_id } }));\n// Hay eventos, pero ninguno es relevante para este flujo: se avanza el cursor igualmente.\nif (out.length === 0 && events.length > 0) {\n  return [{ json: { source: 'poll', noop: true, batch_next_cursor: body.next_after_id } }];\n}\nreturn out;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        0
+      ],
+      "id": "b972e70d-621c-513d-9de6-65decb3cbbae",
+      "name": "Normalizar eventos (sondeo)"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "zapatero-event",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        220
+      ],
+      "id": "ce85af13-636c-5aa8-84b5-0b81f9f0987a",
+      "name": "Recibir evento (webhook)",
+      "webhookId": "84e9e87d-c57e-5475-8df4-9ffc15e66db2",
+      "notes": "Disparador 2: recepción directa de un evento (payloads de prueba). Exige cabecera X-Webhook-Secret.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const headers = $input.item.json.headers || {};\nconst secret = $env.N8N_WEBHOOK_SECRET;\nif (!secret || headers['x-webhook-secret'] !== secret) {\n  return { json: { source: 'webhook', auth_failed: true } };\n}\nreturn { json: { source: 'webhook', event: $input.item.json.body, batch_next_cursor: null } };",
+        "mode": "runOnceForEachItem"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        220
+      ],
+      "id": "8f933d9d-3ba9-5501-9172-82c491482402",
+      "name": "Normalizar evento (webhook)"
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1200,
+        110
+      ],
+      "id": "e751fe52-53ff-5967-8214-14f2b547e048",
+      "name": "Procesar de uno en uno",
+      "notes": "Un evento cada vez: así un fallo no impide registrar el resultado de los demás.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const it = $input.item.json;\nconst EVENT_ID = /^evt_[0-9a-f]{32}$/;\nconst ORDER_CODE = /^ZAP-\\d{8}-\\d{4}$/;\nconst STATUSES = ['created', 'paid_simulated', 'pending_preparation', 'shipped', 'incident', 'cancelled'];\nconst base = { source: it.source, batch_next_cursor: it.batch_next_cursor ?? null };\n\nif (it.noop) return { json: { ...base, route: 'noop', cursor_id: null, event_id: null, event_type: null } };\nif (it.auth_failed) {\n  return { json: { ...base, route: 'invalid', cursor_id: null, event_id: null, event_type: null,\n    error_code: 'unauthorized', errors: ['Webhook sin cabecera X-Webhook-Secret válida'] } };\n}\n\nconst e = it.event;\nconst errors = [];\nif (!e || typeof e !== 'object' || Array.isArray(e)) {\n  errors.push('El cuerpo no es un objeto JSON');\n} else {\n  if (!EVENT_ID.test(String(e.event_id ?? ''))) errors.push('event_id inválido (se espera evt_ + 32 hex)');\n  if (e.schema_version !== 1) errors.push('schema_version no soportada (se espera 1)');\n  if (!['order.created', 'order.status_changed'].includes(e.type)) errors.push('type no soportado: ' + e.type);\n  if (Number.isNaN(Date.parse(e.occurred_at))) errors.push('occurred_at no es una fecha ISO 8601');\n  const p = e.payload;\n  if (!p || typeof p !== 'object') {\n    errors.push('payload ausente');\n  } else {\n    if (!ORDER_CODE.test(String(p.order_code ?? ''))) errors.push('payload.order_code inválido (ZAP-AAAAMMDD-NNNN)');\n    if (e.type === 'order.created') {\n      if (!Number.isInteger(p.total_cents) || p.total_cents < 0) errors.push('payload.total_cents debe ser un entero >= 0');\n      if (!Number.isInteger(p.items) || p.items < 1) errors.push('payload.items debe ser un entero >= 1');\n    }\n    if (e.type === 'order.status_changed' && !STATUSES.includes(p.to)) errors.push('payload.to no es un estado válido');\n  }\n}\nconst meta = {\n  ...base, event: e ?? null, event_id: e?.event_id ?? null, event_type: e?.type ?? null,\n  cursor_id: Number.isInteger(e?.cursor_id) ? e.cursor_id : null,\n};\nif (errors.length) return { json: { ...meta, route: 'invalid', error_code: 'invalid_payload', errors } };\nreturn { json: { ...meta, route: e.type, errors: [] } };",
+        "mode": "runOnceForEachItem"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        110
+      ],
+      "id": "add0dc2d-d531-5365-b83a-aba26add56e1",
+      "name": "Validar contrato",
+      "notes": "Validación del contrato: formato de event_id, versión, tipo y campos obligatorios.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "69939292-56c1-5fa1-b370-6c2b3003e85b",
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "order.created",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "order.created"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "5122ae5a-a7e9-5090-9427-82527307ecec",
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "order.status_changed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "order.status_changed"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "e5243332-65e7-57e0-80ad-f2ed6edd5a20",
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "noop",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "noop"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "b27877ab-1a85-5968-afc5-2f652b762b12",
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "invalid",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "invalid"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1680,
+        110
+      ],
+      "id": "00980935-9150-50e6-b976-6f1993887b8f",
+      "name": "Enrutar por tipo"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.ZAPATERO_BASE_URL }}/api/v1/orders/{{ $json.event.payload.order_code }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.ZAPATERO_API_TOKEN }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1920,
+        -200
+      ],
+      "id": "7570d653-12ef-5696-86fe-0c562f43a350",
+      "name": "Consultar pedido en la tienda",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput",
+      "notes": "Herramienta de lectura: pedido completo normalizado.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $('Validar contrato').item.json;\nconst res = $input.item.json;\nconst code = ctx.event.payload.order_code;\nif (res.error || res.statusCode !== 200 || !res.body || !res.body.order) {\n  const notFound = res.statusCode === 404;\n  return { json: { ...ctx, prepared: false, outcome: notFound ? 'rejected' : 'error',\n    error_code: notFound ? 'order_not_found_in_shop' : 'shop_unavailable',\n    message: 'La tienda respondió ' + (res.statusCode ?? 'sin respuesta') + ' al consultar ' + code } };\n}\nconst o = res.body.order;\nconst c = o.customer || {};\n// Normalización: espacios fuera, email en minúsculas.\nconst bo = {\n  event_id: ctx.event_id, event_type: ctx.event_type, workflow: 'wf1-pedidos',\n  execution_id: String($execution.id), occurred_at: ctx.event.occurred_at,\n  order: { ...o, customer: {\n    full_name: String(c.full_name ?? '').trim(), email: String(c.email ?? '').trim().toLowerCase(),\n    city: c.city ?? null, province: c.province ?? null } },\n};\nreturn { json: { ...ctx, prepared: true, bo_payload: bo } };",
+        "mode": "runOnceForEachItem"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        -200
+      ],
+      "id": "17de9f0a-2fca-55b4-a635-30a3fafd7706",
+      "name": "Transformar a contrato back-office"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ed0db91c-0a8f-58fa-817d-dc3a1c21ae38",
+              "leftValue": "={{ $json.prepared }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2400,
+        -200
+      ],
+      "id": "9fe8b84d-8487-5ec5-ae04-b110d34c2137",
+      "name": "¿Pedido preparado?"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKOFFICE_BASE_URL }}/bo/api/v1/orders",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.BO_API_TOKEN }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.bo_payload) }}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2640,
+        -280
+      ],
+      "id": "7be83a93-f3d2-58dc-8b16-908912bb2eee",
+      "name": "Enviar pedido al back-office",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput",
+      "notes": "Alta o actualización idempotente del pedido (event_id).",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $input.item.json;\nconst bo = {\n  event_id: ctx.event_id, event_type: ctx.event_type, workflow: 'wf1-pedidos',\n  execution_id: String($execution.id), occurred_at: ctx.event.occurred_at,\n  status: ctx.event.payload.to,\n};\nreturn { json: { ...ctx, prepared: true, bo_payload: bo } };",
+        "mode": "runOnceForEachItem"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        20
+      ],
+      "id": "1e6f5310-818c-5fdb-b01b-ecb5131cfe8f",
+      "name": "Preparar cambio de estado"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKOFFICE_BASE_URL }}/bo/api/v1/orders/{{ $json.event.payload.order_code }}/status",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.BO_API_TOKEN }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.bo_payload) }}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2160,
+        20
+      ],
+      "id": "6ecb4de0-096d-567d-a479-4b33f9c88c7b",
+      "name": "Enviar cambio de estado",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput",
+      "notes": "Si el pedido aún no existe, el back-office lo guarda como pendiente de sincronización (202).",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $('Validar contrato').item.json;\nconst r = $input.item.json;\nlet outcome, error_code = null, message = null, result = null;\n\nif (r.prepared === false) {                       // falló antes de llegar al back-office\n  outcome = r.outcome; error_code = r.error_code; message = r.message;\n} else if (r.statusCode === undefined) {          // sin respuesta: red caída, timeout...\n  outcome = 'error'; error_code = 'backoffice_unreachable';\n  message = String((r.error && (r.error.message || r.error)) || 'Sin respuesta del back-office');\n} else if (r.statusCode >= 200 && r.statusCode < 300) {\n  outcome = 'ok'; result = (r.body && r.body.result) || null;\n} else if (r.statusCode >= 400 && r.statusCode < 500) {   // el back-office rechaza el contrato: no se reintenta\n  outcome = 'rejected'; error_code = (r.body && r.body.error) || 'rejected_by_backoffice';\n  message = JSON.stringify((r.body && (r.body.details || r.body.message)) || '');\n} else {                                          // 5xx: fallo técnico, se reintentará en el siguiente sondeo\n  outcome = 'error'; error_code = 'backoffice_error'; message = 'El back-office respondió HTTP ' + r.statusCode;\n}\nconst out = { source: ctx.source, event_id: ctx.event_id, event_type: ctx.event_type, cursor_id: ctx.cursor_id,\n  batch_next_cursor: ctx.batch_next_cursor, route: ctx.route, outcome, result, error_code, message };\nif (outcome === 'error') {\n  out.log_payload = { event_id: ctx.event_id, event_type: ctx.event_type, workflow: 'wf1-pedidos', execution_id: String($execution.id),\n    status: 'error', error_code, message, entity_type: 'order', entity_ref: ctx.event.payload.order_code };\n}\nreturn { json: out };",
+        "mode": "runOnceForEachItem"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2880,
+        -100
+      ],
+      "id": "42f64816-214e-51d1-a305-da3eb7fd2898",
+      "name": "Clasificar resultado",
+      "notes": "Clasifica: ok · rejected (contrato) · error (técnico, reintentable).",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1a5830ff-30c7-5204-a44c-c55cdcbf10a9",
+              "leftValue": "={{ $json.outcome }}",
+              "rightValue": "error",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3120,
+        -100
+      ],
+      "id": "ea6e7d06-ef23-550b-9323-d3d25e4ee11c",
+      "name": "¿Error técnico?"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKOFFICE_BASE_URL }}/bo/api/v1/integration-log",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.BO_API_TOKEN }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.log_payload) }}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3360,
+        -180
+      ],
+      "id": "db1d6a24-e761-5c91-a21b-f48b31baa22c",
+      "name": "Registrar error técnico",
+      "onError": "continueRegularOutput",
+      "notes": "Rama de error: queda en bo_integration_log (si el back-office está caído solo queda el historial de n8n).",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = $('Clasificar resultado').item.json;\nconst { log_payload, ...rest } = r;\nreturn { json: rest };",
+        "mode": "runOnceForEachItem"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3600,
+        -180
+      ],
+      "id": "02df5c2f-6be0-5224-92ba-0e72655f2a64",
+      "name": "Resultado error"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $input.item.json;\nreturn { json: { source: ctx.source, event_id: null, event_type: null, cursor_id: null,\n  batch_next_cursor: ctx.batch_next_cursor, route: 'noop', outcome: 'skipped', result: null, error_code: null, message: 'Evento sin acción en este flujo' } };",
+        "mode": "runOnceForEachItem"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        260
+      ],
+      "id": "4af13679-0b46-5201-808f-095111d5e5fa",
+      "name": "Resultado sin acción"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $input.item.json;\nconst message = (ctx.errors || []).join('; ');\nreturn { json: { ...ctx, log_payload: { event_id: ctx.event_id, event_type: ctx.event_type, workflow: 'wf1-pedidos',\n  execution_id: String($execution.id), status: 'rejected', error_code: ctx.error_code || 'invalid_payload', message,\n  entity_type: 'event', entity_ref: ctx.event?.payload?.order_code ?? null } } };",
+        "mode": "runOnceForEachItem"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        480
+      ],
+      "id": "39f4234b-e1d0-5c24-94d3-7bcee0bf98a3",
+      "name": "Marcar rechazo",
+      "notes": "Rama de datos incompletos: el evento no se envía al back-office.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKOFFICE_BASE_URL }}/bo/api/v1/integration-log",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.BO_API_TOKEN }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.log_payload) }}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2160,
+        480
+      ],
+      "id": "d42fc2e0-bb4c-55fd-b6da-471dd0c88aed",
+      "name": "Registrar rechazo en el log",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const c = $('Marcar rechazo').item.json;\nreturn { json: { source: c.source, event_id: c.event_id, event_type: c.event_type, cursor_id: c.cursor_id,\n  batch_next_cursor: c.batch_next_cursor, route: 'invalid', outcome: 'rejected', result: null,\n  error_code: c.error_code || 'invalid_payload', message: (c.errors || []).join('; ') } };",
+        "mode": "runOnceForEachItem"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        480
+      ],
+      "id": "db5f6b30-2789-55ff-8dac-78fff0a8ab77",
+      "name": "Resultado rechazo"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all().map(i => i.json);\nconst count = o => items.filter(i => i.outcome === o).length;\nconst summary = {\n  processed: items.length, ok: count('ok'), rejected: count('rejected'), skipped: count('skipped'), errors: count('error'),\n  results: items.map(i => ({ event_id: i.event_id, type: i.event_type, outcome: i.outcome, result: i.result,\n    error_code: i.error_code, message: i.message })),\n};\nconst first = items[0] || {};\nif (first.source !== 'poll') return [{ json: { save: false, summary } }];\n\n// Cursor: se avanza hasta el final del lote, salvo que haya un error técnico (se reintentará desde ahí).\nlet next = first.batch_next_cursor;\nconst failed = items.filter(i => i.outcome === 'error' && Number.isInteger(i.cursor_id)).map(i => i.cursor_id).sort((a, b) => a - b);\nif (failed.length) next = failed[0] - 1;\nreturn [{ json: { save: Number.isInteger(next), cursor: String(next), summary } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        -460
+      ],
+      "id": "9165af16-c205-5983-a722-d316f1babbba",
+      "name": "Calcular cursor y resumen",
+      "notes": "Idempotencia + at-least-once: si hay un error técnico el cursor no pasa de ese evento.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6494104e-0ec6-5247-84c3-7e43d744978f",
+              "leftValue": "={{ $json.save }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1680,
+        -460
+      ],
+      "id": "40e075e2-797e-515f-94b8-98f0b7fd5845",
+      "name": "¿Guardar cursor?"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKOFFICE_BASE_URL }}/bo/api/v1/state/wf1_cursor",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.BO_API_TOKEN }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ value: $json.cursor }) }}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1920,
+        -540
+      ],
+      "id": "2f82e041-59ce-5f15-b440-140f83084d04",
+      "name": "Guardar cursor",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "return { json: $('Calcular cursor y resumen').first().json.summary };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        -460
+      ],
+      "id": "fa4b6b01-3bb9-5fa2-b17f-f4ac89226e9f",
+      "name": "Respuesta",
+      "notes": "Resumen de la ejecución (también es la respuesta del webhook).",
+      "notesInFlow": true
+    }
+  ],
+  "connections": {
+    "Cada minuto": {
+      "main": [
+        [
+          {
+            "node": "Leer cursor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer cursor": {
+      "main": [
+        [
+          {
+            "node": "Preparar consulta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar consulta": {
+      "main": [
+        [
+          {
+            "node": "Pedir eventos nuevos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pedir eventos nuevos": {
+      "main": [
+        [
+          {
+            "node": "Normalizar eventos (sondeo)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar eventos (sondeo)": {
+      "main": [
+        [
+          {
+            "node": "Procesar de uno en uno",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recibir evento (webhook)": {
+      "main": [
+        [
+          {
+            "node": "Normalizar evento (webhook)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar evento (webhook)": {
+      "main": [
+        [
+          {
+            "node": "Procesar de uno en uno",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Procesar de uno en uno": {
+      "main": [
+        [
+          {
+            "node": "Calcular cursor y resumen",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Validar contrato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar contrato": {
+      "main": [
+        [
+          {
+            "node": "Enrutar por tipo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrutar por tipo": {
+      "main": [
+        [
+          {
+            "node": "Consultar pedido en la tienda",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Preparar cambio de estado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resultado sin acción",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Marcar rechazo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar pedido en la tienda": {
+      "main": [
+        [
+          {
+            "node": "Transformar a contrato back-office",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transformar a contrato back-office": {
+      "main": [
+        [
+          {
+            "node": "¿Pedido preparado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Pedido preparado?": {
+      "main": [
+        [
+          {
+            "node": "Enviar pedido al back-office",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Clasificar resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar pedido al back-office": {
+      "main": [
+        [
+          {
+            "node": "Clasificar resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar cambio de estado": {
+      "main": [
+        [
+          {
+            "node": "Enviar cambio de estado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar cambio de estado": {
+      "main": [
+        [
+          {
+            "node": "Clasificar resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clasificar resultado": {
+      "main": [
+        [
+          {
+            "node": "¿Error técnico?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Error técnico?": {
+      "main": [
+        [
+          {
+            "node": "Registrar error técnico",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Procesar de uno en uno",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar error técnico": {
+      "main": [
+        [
+          {
+            "node": "Resultado error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resultado error": {
+      "main": [
+        [
+          {
+            "node": "Procesar de uno en uno",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resultado sin acción": {
+      "main": [
+        [
+          {
+            "node": "Procesar de uno en uno",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar rechazo": {
+      "main": [
+        [
+          {
+            "node": "Registrar rechazo en el log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar rechazo en el log": {
+      "main": [
+        [
+          {
+            "node": "Resultado rechazo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resultado rechazo": {
+      "main": [
+        [
+          {
+            "node": "Procesar de uno en uno",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular cursor y resumen": {
+      "main": [
+        [
+          {
+            "node": "¿Guardar cursor?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Guardar cursor?": {
+      "main": [
+        [
+          {
+            "node": "Guardar cursor",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar cursor": {
+      "main": [
+        [
+          {
+            "node": "Respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

@@ -2,7 +2,14 @@
 
 declare(strict_types=1);
 
+use App\BackOffice\BoApiController;
+use App\BackOffice\BoDatabase;
+use App\BackOffice\BoRepository;
+use App\BackOffice\BoService;
+use App\BackOffice\BoUiController;
+use App\BackOffice\MetricsService;
 use App\Controllers\AdminController;
+use App\Controllers\ApiController;
 use App\Controllers\AdminEventController;
 use App\Controllers\AdminProductController;
 use App\Controllers\AuthController;
@@ -15,6 +22,7 @@ use App\Controllers\OrderController;
 use App\Controllers\PaymentController;
 use App\Controllers\ProductController;
 use App\Middleware\AdminAuth;
+use App\Middleware\ApiToken;
 use App\Repositories\CatalogRepository;
 use App\Repositories\EventRepository;
 use App\Repositories\CartRepository;
@@ -92,10 +100,25 @@ return function (App $app, PDO $pdo, PhpRenderer $view): void {
     $app->get('/pago', [$payment, 'show']);
     $app->post('/pago', [$payment, 'submit']);
 
-    $orderPages = new OrderController($view, $orders, $invoices, new SupportService(new OrderRepository($pdo), $events));
+    // Back-office de integración (BD propia, creada solo al usarse). Se define aquí porque la tienda emite los tokens de Telegram.
+    $boService = static function () use ($root): BoService {
+        static $service = null;
+
+        return $service ??= new BoService(new BoRepository(
+            BoDatabase::connect($root . '/' . ($_ENV['BO_DB_PATH'] ?? 'storage/backoffice.sqlite'))
+        ));
+    };
+    $orderPages = new OrderController(
+        $view,
+        $orders,
+        $invoices,
+        new SupportService(new OrderRepository($pdo), $events),
+        static fn (string $orderCode): string => $boService()->issueTelegramToken($orderCode)
+    );
     $app->get('/pedido/{code}', [$orderPages, 'show']);
     $app->get('/pedido/{code}/estado', [$orderPages, 'status']);
     $app->post('/pedido/{code}/soporte', [$orderPages, 'support']);
+    $app->post('/pedido/{code}/telegram', [$orderPages, 'telegram']);
     $app->get('/pedido/{code}/factura', [$orderPages, 'invoice']);
     $app->get('/mis-pedidos', [$orderPages, 'mine']);
     $app->get('/mis-pedidos/estados', [$orderPages, 'statuses']);
@@ -127,6 +150,48 @@ return function (App $app, PDO $pdo, PhpRenderer $view): void {
         $group->post('/productos/{id:[0-9]+}/eliminar', [$adminProducts, 'delete']);
     })->add(new AdminAuth());
 
+    // T2: API de integración de solo lectura para n8n (token Bearer en .env: API_TOKEN).
+    $api = new ApiController(new EventRepository($pdo), $orders);
+    $app->group('/api/v1', function (RouteCollectorProxy $group) use ($api): void {
+        $group->get('/events', [$api, 'events']);
+        $group->get('/orders/{code}', [$api, 'order']);
+    })->add(new ApiToken((string) ($_ENV['API_TOKEN'] ?? '')));
+
+    // T2 · Fase 2: back-office de integración (sistema separado, BD propia, creada solo al usarse).
+    $metrics = new MetricsService($pdo, $boService);
+    $boApi = new BoApiController($boService, $metrics);
+    // Se usa POST (no PATCH/PUT) para que ningún hosting o WAF bloquee los verbos.
+    $app->group('/bo/api/v1', function (RouteCollectorProxy $group) use ($boApi): void {
+        $group->post('/orders', [$boApi, 'ingestOrder']);
+        $group->post('/orders/{code}/status', [$boApi, 'orderStatus']);
+        $group->get('/orders/{code}', [$boApi, 'order']);
+        $group->get('/customers/{id:[0-9]+}', [$boApi, 'customer']);
+        $group->post('/tickets', [$boApi, 'ingestTicket']);
+        $group->post('/tickets/{ref}', [$boApi, 'updateTicket']);
+        $group->post('/agent-actions', [$boApi, 'propose']);
+        $group->get('/agent-actions', [$boApi, 'agentActions']);
+        $group->post('/agent-actions/{id:[0-9]+}/executed', [$boApi, 'executed']);
+        $group->post('/telegram/link', [$boApi, 'telegramLink']);
+        $group->post('/integration-log', [$boApi, 'writeLog']);
+        $group->get('/state/{key}', [$boApi, 'getState']);
+        $group->post('/state/{key}', [$boApi, 'setState']);
+        $group->get('/pending-sync', [$boApi, 'pending']);
+        $group->get('/metrics', [$boApi, 'metrics']);
+    })->add(new ApiToken((string) ($_ENV['BO_API_TOKEN'] ?? '')));
+
+    $boUi = new BoUiController($view, $boService, $metrics);
+    $app->group('/bo', function (RouteCollectorProxy $group) use ($boUi): void {
+        $group->get('', [$boUi, 'home']);
+        $group->get('/pedidos', [$boUi, 'orders']);
+        $group->get('/pedidos/{code}', [$boUi, 'order']);
+        $group->get('/tickets', [$boUi, 'tickets']);
+        $group->post('/tickets/{ref}/estado', [$boUi, 'ticketStatus']);
+        $group->get('/metricas', [$boUi, 'metrics']);
+        $group->get('/metricas/datos', [$boUi, 'metricsData']);
+        $group->get('/agente', [$boUi, 'agent']);
+        $group->post('/agente/{id:[0-9]+}/decidir', [$boUi, 'decide']);
+        $group->get('/integracion', [$boUi, 'integration']);
+    })->add(new AdminAuth());
     // API de eventos para la Tarea 2 (§7 del plan).
     $app->get('/api/events', [$eventApi, 'json']);
     $app->get('/api/events.csv', [$eventApi, 'csv']);

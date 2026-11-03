@@ -24,7 +24,9 @@ final class OrderController
         private readonly PhpRenderer $view,
         private readonly OrderService $orders,
         private readonly InvoiceService $invoices,
-        private readonly SupportService $support
+        private readonly SupportService $support,
+        /** Emite el token de un solo uso del enlace de Telegram: fn(string $orderCode): string */
+        private readonly ?\Closure $telegramToken = null
     ) {}
 
     public function show(Request $request, Response $response, array $args): Response
@@ -83,6 +85,41 @@ final class OrderController
         }
 
         return $response->withHeader('Location', $back)->withStatus(303);
+    }
+
+    /** Genera un token de un solo uso y redirige a t.me/BOT?start=TOKEN (POST + CSRF: tiene efecto en el back-office). */
+    public function telegram(Request $request, Response $response, array $args): Response
+    {
+        $code = (string) ($args['code'] ?? '');
+        $detail = $this->accessible($code);
+        if ($detail === null || ($detail['payment']['status'] ?? '') !== 'approved') {
+            return $this->notFound($response);
+        }
+        $back = '/pedido/' . rawurlencode($code) . '#telegram';
+        $body = (array) $request->getParsedBody();
+        if (!Csrf::valid($body)) {
+            $_SESSION['_flash_error'] = 'La sesión del formulario caducó. Inténtalo de nuevo.';
+
+            return $response->withHeader('Location', $back)->withStatus(303);
+        }
+        $bot = (string) ($_ENV['TELEGRAM_BOT_USERNAME'] ?? '');
+        if ($this->telegramToken === null || preg_match('/^[A-Za-z][A-Za-z0-9_]{4,31}$/', $bot) !== 1) {
+            $_SESSION['_flash_error'] = 'Los avisos por Telegram no están disponibles ahora mismo.';
+
+            return $response->withHeader('Location', $back)->withStatus(303);
+        }
+        try {
+            $token = ($this->telegramToken)($code);
+        } catch (\Throwable) {
+            $_SESSION['_flash_error'] = 'No se pudo preparar el enlace de Telegram. Inténtalo de nuevo.';
+
+            return $response->withHeader('Location', $back)->withStatus(303);
+        }
+
+        return $response
+            ->withHeader('Location', 'https://t.me/' . $bot . '?start=' . $token)
+            ->withHeader('Cache-Control', 'no-store')
+            ->withStatus(303);
     }
 
     public function invoice(Request $request, Response $response, array $args): Response

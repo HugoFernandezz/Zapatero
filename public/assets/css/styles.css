@@ -652,3 +652,12 @@ select {
 
 /* Acciones de cabecera del back-office */
 .admin-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+
+/* Botón «Recibir avisos por Telegram» (página del pedido) */
+.telegram-card { position: static; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1.2rem; background: linear-gradient(135deg, #e6f5fc 0%, #ffffff 70%); border-color: #b6dff3; }
+.telegram-card h2 { margin-bottom: 0.3rem; }
+.telegram-card p { margin: 0; max-width: 46ch; }
+.telegram-card form { margin: 0; }
+.button-telegram { display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.9rem 1.6rem; border: 0; border-radius: 999px; background: #229ed9; color: #fff; font: inherit; font-size: 1.05rem; font-weight: 800; text-decoration: none; cursor: pointer; box-shadow: 0 10px 24px rgba(34, 158, 217, 0.38); transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease; }
+.button-telegram:hover { background: #1a86bb; transform: translateY(-2px); box-shadow: 0 14px 28px rgba(34, 158, 217, 0.45); }
+.button-telegram:focus-visible { outline: 3px solid #094f56; outline-offset: 3px; }

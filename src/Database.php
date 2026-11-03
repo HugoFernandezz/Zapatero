@@ -51,6 +51,19 @@ final class Database
                 )'
             );
         }
+        // T2: identificador único y versión de contrato en cada evento (idempotencia al integrar).
+        $eventColumns = array_column($pdo->query('PRAGMA table_info(events)')->fetchAll(), 'name');
+        if (!in_array('event_id', $eventColumns, true)) {
+            $pdo->exec('ALTER TABLE events ADD COLUMN event_id TEXT');
+        }
+        if (!in_array('schema_version', $eventColumns, true)) {
+            $pdo->exec('ALTER TABLE events ADD COLUMN schema_version INTEGER NOT NULL DEFAULT 1');
+        }
+        if ($pdo->query('SELECT 1 FROM events WHERE event_id IS NULL LIMIT 1')->fetchColumn() !== false) {
+            $pdo->exec("UPDATE events SET event_id = 'evt_' || lower(hex(randomblob(16))) WHERE event_id IS NULL");
+        }
+        if (!$has('index', 'idx_events_event_id')) {
+            $pdo->exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_events_event_id ON events (event_id)');
         // Bases creadas antes de existir los códigos de descuento.
         if ($pdo->query('SELECT 1 FROM discount_codes LIMIT 1')->fetchColumn() === false) {
             CatalogSeeder::seedDiscountCodes($pdo);
@@ -59,4 +72,5 @@ final class Database
             $pdo->exec('CREATE INDEX IF NOT EXISTS idx_orders_user ON orders (user_id)');
         }
     }
+}
 }

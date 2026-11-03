@@ -1,0 +1,13 @@
+{
+  "event_id": "__EVENT_ID__",
+  "schema_version": 1,
+  "type": "support.requested",
+  "occurred_at": "__NOW__",
+  "payload": {
+    "order_code": "__ORDER_CODE__",
+    "ticket_id": __TICKET_ID__,
+    "subject_key": "talla",
+    "subject": "Cambio de talla",
+    "message_length": 40
+  }
+}
