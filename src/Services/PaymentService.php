@@ -8,13 +8,14 @@ use DateTimeImmutable;
 use DateTimeZone;
 
 /**
- * Pasarela de pago SIMULADA. No contacta con ningún banco: cualquier tarjeta es válida salvo 0000 0000 0000 0000,
+ * Pasarela de pago SIMULADA. No contacta con ningún banco: cualquier tarjeta es válida salvo las de REJECTED_CARDS,
  * que la pasarela deniega.
  * El número completo y el CVC nunca se guardan: solo se conservan los 4 últimos dígitos.
  */
 final class PaymentService
 {
-    public const REJECTED_CARD = '0000000000000000';
+    /** Tarjetas de prueba que la pasarela rechaza (PLANNING §6 y la tarjeta 0000). */
+    public const REJECTED_CARDS = ['0000000000000000', '4000000000000002'];
 
     /** @return array{errors: array<string,string>, holder: string, expiry: string, approved: bool, last4: string} */
     public function evaluate(array $input, ?DateTimeImmutable $now = null): array
@@ -57,7 +58,7 @@ final class PaymentService
             'errors' => $errors,
             'holder' => $holder,
             'expiry' => $expiry,
-            'approved' => !isset($errors['card_number']) && $number !== self::REJECTED_CARD,
+            'approved' => !isset($errors['card_number']) && !in_array($number, self::REJECTED_CARDS, true),
             'last4' => isset($errors['card_number']) ? '' : substr($number, -4),
         ];
     }

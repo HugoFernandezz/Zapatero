@@ -103,7 +103,7 @@ final class AdminEventController
         return preg_match('/^[=+\-@\t\r]/', $text) === 1 ? "'" . $text : $text;
     }
 
-    /** @return array{type: string, q: string, from: string, to: string} */
+    /** @return array{since: string, type: string, q: string, from: string, to: string} */
     private function filters(array $params): array
     {
         $type = (string) ($params['type'] ?? '');
@@ -117,7 +117,14 @@ final class AdminEventController
             return $parsed !== false && $parsed->format('Y-m-d') === $value ? $value : '';
         };
 
+        // since: fecha-hora ISO 8601 UTC (p. ej. 2026-10-06T10:00:00Z) para el sondeo incremental de la API.
+        $since = (string) ($params['since'] ?? '');
+        if (DateTimeImmutable::createFromFormat('Y-m-d\TH:i:s\Z', $since) === false) {
+            $since = '';
+        }
+
         return [
+            'since' => $since,
             'type' => $type,
             'q' => mb_substr(trim((string) ($params['q'] ?? '')), 0, 80),
             'from' => $date($params['from'] ?? ''),

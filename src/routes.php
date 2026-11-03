@@ -16,6 +16,7 @@ use App\Controllers\AuthController;
 use App\Controllers\CatalogController;
 use App\Controllers\CartController;
 use App\Controllers\CheckoutController;
+use App\Controllers\EventApiController;
 use App\Controllers\HomeController;
 use App\Controllers\OrderController;
 use App\Controllers\PaymentController;
@@ -75,6 +76,7 @@ return function (App $app, PDO $pdo, PhpRenderer $view): void {
     $orders = new OrderService($pdo, new OrderRepository($pdo), $events, $invoices, $mail, new OrderNotifier());
     $admin = new AdminController($view, $orders);
     $adminEvents = new AdminEventController($view, new EventRepository($pdo));
+    $eventApi = new EventApiController($adminEvents, (string) ($_ENV['EVENTS_API_TOKEN'] ?? ''));
     $adminProducts = new AdminProductController($view, new ProductAdminService(new ProductAdminRepository($pdo), $root . '/public'));
     $auth = new AuthController(
         $view,
@@ -190,6 +192,9 @@ return function (App $app, PDO $pdo, PhpRenderer $view): void {
         $group->post('/agente/{id:[0-9]+}/decidir', [$boUi, 'decide']);
         $group->get('/integracion', [$boUi, 'integration']);
     })->add(new AdminAuth());
+    // API de eventos para la Tarea 2 (§7 del plan).
+    $app->get('/api/events', [$eventApi, 'json']);
+    $app->get('/api/events.csv', [$eventApi, 'csv']);
 
     $app->get('/health', function (Request $req, Response $res) use ($pdo) {
         $res->getBody()->write(json_encode([

@@ -24,6 +24,14 @@ final class CartRepository
         return $row ?: null;
     }
 
+    public function discountCode(string $code): ?array
+    {
+        $statement = $this->pdo->prepare('SELECT code, type, value FROM discount_codes WHERE code = :code AND active = 1');
+        $statement->execute(['code' => $code]);
+        $row = $statement->fetch();
+        return $row ?: null;
+    }
+
     /** Devuelve todas las líneas actuales; las cantidades proceden de la sesión. */
     public function variants(array $quantities): array
     {
