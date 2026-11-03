@@ -104,7 +104,9 @@ CREATE TABLE support_tickets (
 );
 
 CREATE TABLE events (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_id       TEXT,                       -- identificador global (evt_ + 32 hex): clave de idempotencia
+    schema_version INTEGER NOT NULL DEFAULT 1, -- versión del contrato del payload
     type        TEXT NOT NULL,
     occurred_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
     session_id  TEXT,
@@ -117,4 +119,5 @@ CREATE INDEX idx_products_style ON products (style_id);
 CREATE INDEX idx_orders_status ON orders (status);
 CREATE INDEX idx_orders_user ON orders (user_id);
 CREATE INDEX idx_events_type ON events (type);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_events_event_id ON events (event_id);
 CREATE INDEX idx_events_occurred_at ON events (occurred_at);

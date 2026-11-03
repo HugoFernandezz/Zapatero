@@ -106,6 +106,14 @@ $check($repo->count(['type' => 'order.created']) === 2, 'el filtro por tipo func
 $check($repo->count(['q' => $code]) >= 3, 'la búsqueda por código de pedido funciona');
 $check(AdminEventController::csvCell('=1+1') === "'=1+1", 'el CSV neutraliza fórmulas');
 
+echo "Integración (T2)\n";
+$ids = $pdo->query('SELECT event_id FROM events')->fetchAll(PDO::FETCH_COLUMN);
+$check($ids !== [] && count($ids) === count(array_unique($ids)), 'todos los eventos tienen event_id único');
+$check(preg_match('/^evt_[0-9a-f]{32}$/', (string) $ids[0]) === 1, 'el event_id tiene el formato evt_ + 32 hex');
+$page = $repo->after(0, 3);
+$check(count($page) === 4 && (int) $page[0]['id'] < (int) $page[1]['id'], 'el cursor devuelve eventos ascendentes y limit + 1 para detectar más');
+$check($repo->after((int) $scalar('SELECT MAX(id) FROM events'), 10) === [], 'sin eventos nuevos el cursor devuelve vacío');
+
 // Limpieza
 foreach (glob($tmp . '/{*,mail/*}', GLOB_BRACE) ?: [] as $file) {
     if (is_file($file)) {
