@@ -1,0 +1,12 @@
+{
+  "event_id": "__EVENT_ID__",
+  "schema_version": 1,
+  "type": "order.status_changed",
+  "occurred_at": "__NOW__",
+  "payload": {
+    "order_code": "__ORDER_CODE__",
+    "from": "paid_simulated",
+    "to": "pending_preparation",
+    "by": "admin@zapatero.test"
+  }
+}
