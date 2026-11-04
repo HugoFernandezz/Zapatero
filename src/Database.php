@@ -64,6 +64,7 @@ final class Database
         }
         if (!$has('index', 'idx_events_event_id')) {
             $pdo->exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_events_event_id ON events (event_id)');
+        }
         // Bases creadas antes de existir los códigos de descuento.
         if ($pdo->query('SELECT 1 FROM discount_codes LIMIT 1')->fetchColumn() === false) {
             CatalogSeeder::seedDiscountCodes($pdo);
@@ -72,5 +73,4 @@ final class Database
             $pdo->exec('CREATE INDEX IF NOT EXISTS idx_orders_user ON orders (user_id)');
         }
     }
-}
 }

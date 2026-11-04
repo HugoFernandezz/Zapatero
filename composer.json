@@ -29,7 +29,8 @@
             "php tests/smoke.php",
             "php tests/backoffice.php",
             "php tests/metrics.php",
-            "php tests/http.php"
+            "php tests/http.php",
+            "php tests/integracion.php"
         ]
     }
 }

@@ -51,3 +51,8 @@ dist/
 *.db
 tmp/
 output/*.zip
+
+# Material del curso y copias de compañeros (pueden incluir sus claves): no se versionan
+*.zip
+SIE_pres_enunciado_tarea_2.pdf
+tipsParte2.txt
