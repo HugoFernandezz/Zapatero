@@ -10,6 +10,9 @@ use Slim\Views\PhpRenderer;
 $root = dirname(__DIR__);
 require $root . '/vendor/autoload.php';
 
+// Los proveedores cloud pueden inyectar variables sin crear un .env.
+// PHP con variables_order=GPCS no las copia a $_ENV por defecto.
+$_ENV += getenv();
 Dotenv::createImmutable($root)->safeLoad();
 
 $debug = ($_ENV['APP_DEBUG'] ?? 'false') === 'true';

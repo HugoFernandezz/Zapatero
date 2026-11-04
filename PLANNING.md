@@ -193,7 +193,7 @@ Los importes se guardan en **céntimos (enteros)** para evitar errores de redond
 
 - **Precios con IVA incluido (21 %)**. El IVA se desglosa en el resumen y en el pedido.
 - **Envío:** 4,95 €, gratis a partir de 60 € de subtotal.
-- **Descuentos:** códigos de porcentaje (`BIENVENIDA10`, −10 %) y de importe fijo (`ZAP5`, −5 €). Un código por pedido.
+- **Descuentos:** códigos de porcentaje (`BIENVENIDA10`, −10 %) y de importe fijo (`ZAP5`, −5 €). Un código por pedido. Los clientes con sesión iniciada tienen además un 10 % automático (`CLIENTE10`); no se suma al código, se aplica el mayor.
 - **Stock por talla:** no se puede añadir más unidades que el stock disponible. El stock se descuenta al confirmar el pago simulado.
 - **ID de pedido:** `ZAP-AAAAMMDD-XXXX`, único.
 - **Pago simulado:** la tarjeta `4242 4242 4242 4242` se aprueba y la `4000 0000 0000 0002` se rechaza. No se guardan datos de tarjeta, solo los 4 últimos dígitos.
@@ -301,7 +301,7 @@ La **documentación** se reparte entre todos: README (M1), memoria (secciones po
 - [x] URL pública de la aplicación desplegada: https://www.zapatero.onl
 - [ ] Repositorio GitHub con commits de los 5 miembros
 - [ ] Zip del código fuente en el Campus Virtual
-- [ ] README: instalación, ejecución, usuarios de prueba, limitaciones conocidas
+- [x] README: instalación, ejecución, usuarios de prueba, limitaciones conocidas
 - [ ] Memoria PDF (5-6 páginas):
   1. Caso de empresa y justificación de la arquitectura y las tecnologías (con alternativas)
   2. Modelo de datos

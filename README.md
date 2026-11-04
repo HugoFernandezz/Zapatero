@@ -1,198 +1,244 @@
 # Zapatero
 
-Prototipo académico de eCommerce (SIE, Tarea 1). **Sin actividad comercial real**: los pagos son simulados y todos los datos son ficticios. La propia web lo indica en una franja visible en todas las páginas.
+## Mejoras de políticas, Telegram y publicación
 
-- **URL pública:** _(completar con la URL del hosting antes de entregar)_
-- **Stack:** PHP 8.1+ · Slim 4 · SQLite (PDO) · plantillas PHP. Justificación y alternativas en [PLANNING.md](PLANNING.md).
+La ruta `/politicas` y el pie común explican el funcionamiento, los pagos y envíos simulados, el soporte y el uso exclusivo de datos de prueba. La API de vinculación de Telegram exige el token de un solo uso: se retira el contrato antiguo que aceptaba solo un código de pedido.
 
-## Requisitos
+Las mejoras se integran sobre la versión del equipo en `fe1307d`, conservando sus APIs y cambios de datos. `composer test` incorpora una suite HTTP para comprobar la navegación y los rechazos de vinculación sin modificar el chat.
 
-- PHP 8.1 o superior con las extensiones `pdo_sqlite` y `mbstring`
-- [Composer](https://getcomposer.org/)
+La configuración de n8n está publicada por separado en la rama `codex/despliegue-n8n-irene` del fork de Irene. Su estado y las instrucciones de DonDominio figuran en [la guía de publicación](docs/despliegue-publico.md) y [la actualización del hosting](docs/actualizacion-dondominio.md). El 04/11/2026 se verificaron la publicación de n8n y back-office, siete comprobaciones públicas y una ejecución de lectura desde Render a DonDominio. WF1-WF3 están importados y sin publicar; la demostración con IA y Telegram requiere completar sus credenciales y pruebas conjuntas.
 
-## Instalación y ejecución en local
+La [memoria](docs/memoria.md) y el [anexo de IA](docs/anexo-ia.md) describen el estado comprobado. Los PDF se generan con `python scripts/generar-documentos.py` (ReportLab) en `output/pdf/`. El [guion de pruebas](docs/pruebas-y-defensa.md) distingue las comprobaciones locales de los escenarios externos pendientes.
 
-```bash
-composer install
-cp .env.example .env     # en Windows (CMD): copy .env.example .env
-composer db:init         # crea storage/zapatero.sqlite con el catálogo y el cliente de prueba
-composer db:demo         # (opcional) pedidos y eventos de demostración, todo ficticio
-composer start           # http://localhost:8000
-composer test            # test de humo del flujo de compra, estados, eventos y soporte
+
+Prototipo académico de eCommerce (Soluciones Informáticas para la Empresa, UCAM). **Sin actividad comercial real**: los pagos son simulados y todos los datos son ficticios. La propia web lo indica en una franja visible en todas las páginas.
+
+- **Tarea 1:** canal digital de venta (tienda, carrito, pago simulado, back-office, eventos de negocio).
+- **Tarea 2:** integración con un back-office, automatización con **n8n**, **agente de IA supervisado**, avisos por **Telegram** y cuadro de mando con métricas reales.
+- **Stack:** PHP 8.1+ · Slim 4 · SQLite (PDO) · plantillas PHP · n8n (Docker) · Telegram Bot API · modelo de lenguaje con API compatible con OpenAI (Gemini, Groq u Ollama).
+- **URL pública de la Tarea 1:** _(completar si procede; la Tarea 2 se ejecuta en local)_
+
+> README de la Tarea 1 (despliegue en DonDominio, correo, etc.): [docs/README-tarea1.md](docs/README-tarea1.md).
+
+## Arquitectura de la Tarea 2
+
+```mermaid
+flowchart LR
+  C[Cliente] --> T["Tienda PHP :8000"]
+  T -->|evento con event_id| EV[(tabla events)]
+  N["n8n en Docker :5678"] -->|"GET /api/v1/events"| T
+  N -->|"POST /bo/api/v1"| B["Back-office /bo<br/>BD SQLite propia"]
+  N -->|consulta y propuesta| A["Agente de IA"]
+  A -->|propuesta pendiente| B
+  P[Persona] -->|aprueba o rechaza| B
+  N -->|solo acciones aprobadas| TG[Telegram]
+  TG --> C
 ```
 
-Si el fichero de la base de datos no existe, la aplicación lo crea sola en la primera petición (esquema + catálogo + cliente de prueba), así que `composer db:init` solo es necesario para **borrarla y recrearla**. `GET /health` devuelve la versión de PHP y SQLite y el número de tablas.
+1. La tienda registra cada acción como evento con un `event_id` único (`evt_` + 32 hex).
+2. n8n lee los eventos nuevos con un **cursor** (cada minuto) o los recibe por **webhook**, los valida y los transforma.
+3. Crea o actualiza pedidos y tickets en el **back-office** (`/bo`, con base de datos propia). Cada ejecución, correcta o fallida, queda en el log de integración.
+4. Para incidencias, un **agente de IA** consulta el pedido y el cliente, clasifica el caso y **propone** una respuesta. Nace en estado `pending_review`.
+5. **Una persona aprueba o rechaza** la propuesta en `/bo/agente`. Solo las aprobadas se envían al cliente por Telegram.
+6. `/bo/metricas` muestra indicadores calculados con los datos que genera el propio sistema.
+
+Documentación detallada: [contrato de integración](docs/contrato-integracion.md) · [justificación de métricas](docs/metricas-justificacion.md) · [n8n: workflows, payloads y pruebas](n8n/README.md).
+
+## Qué necesitas
+
+| Programa | Para qué | Comprobación |
+|---|---|---|
+| PHP 8.1 o superior con `pdo_sqlite`, `sqlite3`, `mbstring`, `openssl` y `curl` | Tienda y back-office | `php -v` y `php -m` |
+| [Composer](https://getcomposer.org/) | Dependencias de PHP | `composer -V` |
+| [Docker Desktop](https://www.docker.com/products/docker-desktop) | Ejecutar n8n | `docker --version` |
+| Cuenta de Telegram | Crear **tu propio bot** con @BotFather | — |
+| Clave de un modelo de lenguaje (opcional) | Agente de IA real. Sin ella, el agente entra en **modo seguro** | Ver paso 4 |
+| Git | Descargar y subir el código | `git --version` |
+
+Cada persona debe usar **su propio bot de Telegram y su propia clave de modelo**: si dos instancias de n8n leen el mismo bot, Telegram devuelve un error de conflicto y se pierden mensajes.
+
+## Puesta en marcha
+
+Los comandos son de PowerShell (terminal de VS Code en Windows), ejecutados desde la raíz del proyecto. En macOS o Linux, cambia `Copy-Item` por `cp`.
+
+### 1. La tienda y el back-office
+
+```powershell
+composer install
+Copy-Item .env.example .env
+php -r "echo bin2hex(random_bytes(24));"
+```
+
+Ejecuta el último comando **dos veces**: la primera salida es tu `API_TOKEN` y la segunda tu `BO_API_TOKEN` (deben ser distintos). Edita `.env`:
+
+| Variable | Valor |
+|---|---|
+| `MAIL_DRIVER` | `log` (no envía correos reales; los guarda como `.eml` en `storage/mail`) |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | `admin@zapatero.test` y una clave de prueba |
+| `API_TOKEN` | Primer valor generado |
+| `BO_API_TOKEN` | Segundo valor generado |
+| `TELEGRAM_BOT_USERNAME` | Usuario de tu bot, sin `@` (el botón de Telegram no aparece si está vacío) |
+
+Deja el resto (`SMTP_*`, `MAIL_FROM`, `DB_PATH`, `BO_DB_PATH`) como está. Después:
+
+```powershell
+composer db:init      # crea storage/zapatero.sqlite con el catálogo y el cliente de prueba
+composer db:demo      # (opcional) pedidos y eventos de demostración ficticios
+composer start:lan    # http://localhost:8000 (déjalo abierto)
+```
+
+Usa `start:lan` y no `start`: n8n corre en Docker y, con `start`, no podría llegar a la tienda. Windows pedirá permiso de firewall para `php.exe`: acepta en redes privadas. Comprueba `http://localhost:8000/health`.
+
+La base del back-office (`storage/backoffice.sqlite`) se crea sola en la primera petición. Si ya tenías una base de la Tarea 1, la tienda la actualiza sola (`Database::migrate`).
+
+### 2. Tu bot de Telegram
+
+1. En Telegram, abre **@BotFather** y escribe `/newbot`.
+2. Elige un nombre y un usuario que termine en `bot`.
+3. Apunta el **token** (secreto: solo va en `n8n/n8n.env`) y el **usuario sin `@`** (va en `TELEGRAM_BOT_USERNAME` del `.env`; reinicia la tienda tras editarlo).
+
+### 3. n8n
+
+```powershell
+Copy-Item n8n/n8n.env.example n8n/n8n.env
+php -r "echo bin2hex(random_bytes(16));"
+```
+
+El segundo comando genera el valor de `N8N_WEBHOOK_SECRET`. Edita `n8n/n8n.env` (sin comillas, sin espacios alrededor del `=` y sin comentarios en la misma línea):
+
+| Variable | Valor |
+|---|---|
+| `ZAPATERO_BASE_URL`, `BACKOFFICE_BASE_URL` | Dejar `http://host.docker.internal:8000` |
+| `ZAPATERO_API_TOKEN` | **El mismo** valor que `API_TOKEN` del `.env` |
+| `BO_API_TOKEN` | **El mismo** valor que `BO_API_TOKEN` del `.env` |
+| `N8N_WEBHOOK_SECRET` | Valor generado |
+| `TELEGRAM_BOT_TOKEN` | Token de tu bot |
+| `TELEGRAM_ADMIN_CHAT_ID` | Opcional; vacío = sin aviso al personal |
+
+### 4. El modelo de lenguaje (agente de IA)
+
+En `n8n/n8n.env`, deja **una sola** de estas opciones activa (están comentadas en el fichero de ejemplo):
+
+- **Gemini** (capa gratuita; clave en https://aistudio.google.com): `LLM_BASE_URL`, `LLM_API_KEY` y `LLM_MODEL=gemini-2.5-flash`.
+- **Groq** (capa gratuita): `LLM_BASE_URL=https://api.groq.com/openai/v1` y `LLM_MODEL=llama-3.3-70b-versatile`.
+- **Ollama** en tu propio equipo, sin enviar datos a terceros.
+
+Sin clave, el agente funciona en **modo seguro**: no llama a ningún modelo, deriva el ticket a revisión humana y la confianza es 0.
+
+### 5. Arrancar n8n e importar los workflows
+
+```powershell
+cd n8n
+docker compose up -d
+cd ..
+```
+
+La primera vez descarga la imagen y tarda unos minutos. Abre http://localhost:5678, crea la cuenta de propietario (datos ficticios, solo local) e **importa** desde el menú «⋯» → *Import from file* los tres ficheros de `n8n/workflows/`:
+
+- `wf1-pedidos-sincronizacion.json`
+- `wf2-incidencias-agente.json`
+- `wf3-telegram-ejecucion.json`
+
+**Actívalos** con el interruptor *Active* (o *Publish*): sin esto no hay sondeo ni webhook. Si cambias `n8n/n8n.env` más tarde: `docker compose up -d --force-recreate` dentro de `n8n/`.
+
+### 6. Tests
+
+```powershell
+composer test
+```
+
+Ejecuta tres suites: `tests/smoke.php` (tienda, eventos, API), `tests/backoffice.php` (integración, agente y Telegram) y `tests/metrics.php` (métricas). En Windows pueden salir avisos de `unlink` al borrar la base temporal; son inofensivos.
 
 ## Usuarios y datos de prueba
 
 | Para qué | Dato |
 |---|---|
-| Cliente | `cliente@zapatero.test` / `Cliente1234` (existe desde el primer arranque). Recibe un 10 % de descuento automático (`CLIENTE10`). |
-| Administrador | `ADMIN_EMAIL` / `ADMIN_PASSWORD` del `.env` (en `.env.example`: `admin@zapatero.test` / `admin1234`). Se crea solo al abrir `/login` la primera vez. Entra por `/login` y te lleva a `/admin/pedidos`. |
-| Tarjeta aprobada | Cualquier número de 13 a 19 cifras (p. ej. `4242424242424242`), caducidad futura `MM/AA` y CVC de 3 cifras. |
-| Tarjeta rechazada | `0000000000000000` → el pedido nace «cancelado» y no descuenta stock. |
-| Códigos de descuento | `ZAP5` (−5 €) y `BIENVENIDA10` (−10 %). |
-| Envío e impuestos | 4,95 € de envío, gratis desde 60 €. IVA del 21 % desglosado del total (precios con IVA incluido). |
+| Cliente | `cliente@zapatero.test` / `Cliente1234` (descuento automático del 10 %) |
+| Administrador | `ADMIN_EMAIL` / `ADMIN_PASSWORD` de tu `.env`. Se crea al abrir `/login` por primera vez y te lleva a `/admin/pedidos` |
+| Back-office de integración | `/bo` (requiere haber entrado como administrador) |
+| Tarjeta aprobada | Cualquier número de 13 a 19 cifras, p. ej. `4242424242424242`, caducidad futura `MM/AA` y CVC de 3 cifras |
+| Tarjeta rechazada | `0000000000000000`: el pedido nace cancelado y no descuenta stock |
+| Descuentos | `ZAP5` (−5 €) y `BIENVENIDA10` (−10 %) |
 
-`composer db:demo` añade 5 pedidos ficticios que cubren los estados (enviado, pendiente de preparación, con incidencia, pago rechazado, cancelado), una solicitud de soporte y ~60 eventos. Usa un usuario interno `sistema@zapatero.test` que **no puede iniciar sesión** (contraseña aleatoria).
+## Probar los tres escenarios
 
-## Flujo funcional
+Los payloads están en `n8n/payloads/`. El script `n8n/probar.ps1` los envía al webhook de n8n y lee el secreto de `n8n/n8n.env` (si PowerShell bloquea el script: `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`).
 
-`/` → `/catalogo` (colecciones y estilos, filtros por talla) → `/producto/{slug}` → `/carrito` → `/checkout` → `/pago` → `/pedido/{código}` → factura por email.
+| Escenario | Cómo probarlo | Dónde se ve el resultado |
+|---|---|---|
+| **1. Pedido integrado** | Compra en la tienda; en menos de un minuto n8n lo sincroniza. O bien `./n8n/probar.ps1 -Payload 01-esc1-pedido-creado.json -Order ZAP-AAAAMMDD-NNNN` | `/bo/pedidos` e `/bo/integracion` |
+| **2. Cambio operativo** | Cambia el estado del pedido en `/admin/pedidos/{código}`. Un cambio de un pedido aún desconocido queda **pendiente de sincronización** y se aplica al llegar el pedido | `/bo/pedidos/{código}` |
+| **3. Incidencia y Telegram** | En la página del pedido pulsa **Recibir avisos por Telegram** → *Start bot* → *Iniciar*. Después, **Solicitar soporte**. El agente propone una respuesta; **Aprobar** en `/bo/agente` y llega a tu Telegram | `/bo/tickets`, `/bo/agente` y el chat del bot |
 
-Estados del pedido y transiciones permitidas (`src/Support/OrderStatus.php`):
+Pruebas de error y de seguridad:
 
-| Desde | Hacia |
-|---|---|
-| created | paid_simulated (solo por el flujo de pago), cancelled |
-| paid_simulated | pending_preparation, incident, cancelled |
-| pending_preparation | shipped, incident, cancelled |
-| shipped | incident |
-| incident | pending_preparation, cancelled |
-| cancelled | — |
+```powershell
+./n8n/probar.ps1 -Payload 90-error-payload-invalido.json
+./n8n/probar.ps1 -Payload 91-esc3-prompt-injection.json -Order ZAP-AAAAMMDD-NNNN -Flow wf2
+```
 
-Por eso, para marcar un pedido como **Enviado** hay que pasar antes por «Pendiente de preparación». Cada cambio de estado hecho en el back-office **avisa al cliente por email** (preparación, envío, incidencia, resolución y cancelación). Las notas internas del administrador nunca se incluyen en el correo.
+El primero debe terminar en la **rama de error** (`rejected`, registrada en `/bo/integracion`). El segundo intenta manipular al agente: no debe cancelar el pedido ni prometer reembolsos. Repetir un payload con el mismo `-EventId` devuelve `duplicate` sin crear nada nuevo (idempotencia).
 
-Back-office (`/admin`, solo rol `admin`): pedidos con filtros y detalle, cambio de estado, reenvío de factura, gestión de productos y **registro de eventos** (`/admin/eventos`).
+## Cambios desde la Tarea 1
 
-## Eventos de negocio
+| Área | Qué se ha añadido o cambiado | Dónde |
+|---|---|---|
+| **Eventos** | Cada evento lleva `event_id` único (clave de idempotencia) y `schema_version`. `EventService::record()` devuelve el id. La migración es automática en bases ya existentes | `src/Services/EventService.php`, `src/Database.php`, `database/schema.sql` |
+| **API de lectura para n8n** | `GET /api/v1/events?after_id=N` (lectura por cursor) y `GET /api/v1/orders/{code}`, con token Bearer `API_TOKEN` | `src/Controllers/ApiController.php`, `src/Middleware/ApiToken.php`, `src/Repositories/EventRepository.php` |
+| **Back-office de integración** | `/bo`: pedidos, tickets, propuestas del agente, log de integración y métricas. Base de datos propia, separada de la tienda | `src/BackOffice/`, `templates/bo/`, `database/backoffice-schema.sql` |
+| **API del back-office** | `/bo/api/v1` con token `BO_API_TOKEN`: alta idempotente de pedidos y tickets, cambios de estado con orden temporal, pendientes de sincronización, propuestas del agente, cursor y log | `src/BackOffice/BoApiController.php`, `BoService.php` |
+| **Automatización n8n** | Tres workflows: pedidos y sincronización (WF1), incidencias con agente (WF2) y Telegram/ejecución de acciones aprobadas (WF3). Validación, ramas correcta y de error, reintentos y registro de cada ejecución | `n8n/workflows/` |
+| **Agente de IA supervisado** | Herramientas de consulta (`consultar_pedido`, `consultar_cliente`) y de acción (`clasificar_ticket`, propuesta de respuesta). Salida estructurada, límites de actuación, **aprobación humana obligatoria** y modo seguro | WF2, `/bo/agente` |
+| **Telegram** | Botón **Recibir avisos por Telegram** en la página del pedido: genera un **token aleatorio de 128 bits, de un solo uso, que caduca a los 30 minutos** (solo se guarda su hash) y abre `t.me/BOT?start=TOKEN`. Los mensajes al cliente solo se envían tras aprobación humana | `OrderController::telegram`, `BoService::issueTelegramToken`, WF3 |
+| **Cuadro de mando** | `/bo/metricas` con 10 métricas y gráficos calculados desde los datos reales del sistema; `/bo/metricas/datos` devuelve los mismos datos en JSON | `src/BackOffice/MetricsService.php`, `Charts.php`, `docs/metricas-justificacion.md` |
+| **Tests** | `composer test` pasa de una a tres suites (`smoke`, `backoffice`, `metrics`) | `tests/` |
+| **Herramientas** | `composer start:lan` (la tienda escucha en la red, necesario para Docker); `public/.htaccess` conserva la cabecera `Authorization`; enlace «Back-office integración» en el menú de administración | `composer.json`, `public/.htaccess`, `templates/admin/_nav.php` |
+| **Configuración** | Variables nuevas: `API_TOKEN`, `BO_DB_PATH`, `BO_API_TOKEN`, `TELEGRAM_BOT_USERNAME`; fichero `n8n/n8n.env`, que no se sube a git | `.env.example`, `n8n/n8n.env.example`, `.gitignore` |
+| **Documentación** | Contrato de integración, justificación de métricas y guía de n8n | `docs/`, `n8n/README.md` |
 
-Todos se guardan en la tabla `events` (`type`, `occurred_at` UTC, `session_id`, `user_id`, `payload` JSON validado con `json_valid`). Se registran con `EventService::record()` desde la capa de servicios/controladores. Detalle y ejemplos en [INTEGRACION-M5.md](INTEGRACION-M5.md).
-
-| Evento | Cuándo se genera |
-|---|---|
-| `product.viewed` | Al abrir la ficha de un producto |
-| `cart.item_added` | Al añadir una talla al carrito |
-| `checkout.started` | Al entrar en el checkout con un carrito válido |
-| `order.created` | Al crear el pedido (dentro de la transacción de pago) |
-| `payment.simulated` | Resultado del pago de prueba (`approved` / `rejected`) |
-| `support.requested` | Cuando el cliente envía una solicitud de soporte desde su pedido |
-| `incident.created` | Cuando el administrador marca un pedido «Con incidencia» |
-| `order.status_changed` | En cada cambio de estado (incluye el estado inicial) |
-| `invoice.sent` / `invoice.failed`, `status_email.sent` / `status_email.failed` | Resultado de cada correo enviado al cliente |
-
-**Consulta y exportación:** `/admin/eventos` lista los eventos con filtros (tipo, fecha, texto) y recuento por tipo. Desde ahí se exportan a **JSON** (`/admin/eventos/exportar/json`) o **CSV** (`/admin/eventos/exportar/csv`), respetando los filtros activos. Esa exportación es el punto de integración previsto para la Tarea 2 (un sistema de análisis o automatización puede leerla periódicamente o leer directamente la tabla `events`).
-
-## Arquitectura y modelo de datos
+## Estructura del repositorio
 
 ```
-public/      document root (index.php, .htaccess, assets)
+public/        document root (index.php, .htaccess, assets)
 src/
-  Controllers/   interfaz HTTP (Slim): recibe la petición, delega y elige la vista
-  Services/      reglas de negocio (carrito, IVA y descuentos, pedidos, pago simulado, soporte, correo, eventos)
-  Repositories/  acceso a datos con PDO y consultas preparadas
+  Controllers/   interfaz HTTP (tienda, administración, API de eventos)
+  Services/      reglas de negocio (carrito, pedidos, pago simulado, soporte, correo, eventos)
+  Repositories/  acceso a datos con PDO
   Support/       utilidades (estados, CSRF, formato)
-templates/   vistas PHP (tienda y back-office)
-database/    schema.sql, init.php, seed.php, demo.php, test-mail.php
-tests/       smoke.php (sin dependencias)
-storage/     base de datos SQLite y correos de desarrollo (no versionados)
+  Middleware/    autenticación de administrador y token Bearer
+  BackOffice/    back-office de integración (API, interfaz, agente, métricas)
+templates/     vistas PHP (tienda, administración y bo/)
+database/      esquemas, inicialización, datos de demostración
+n8n/           docker-compose, workflows, payloads de prueba y guía
+docs/          contrato de integración, métricas y README de la Tarea 1
+tests/         smoke.php, backoffice.php, metrics.php
+storage/       bases de datos SQLite y correos de desarrollo (no versionados)
 ```
 
-Entidades: `collections`, `styles`, `products`, `product_variants` (talla + stock) · `users` · `cart_items` · `discount_codes` · `orders`, `order_items`, `payments` · `support_tickets` · `events`. El esquema completo está en `database/schema.sql`.
+## Despliegue con Docker en un servidor
 
-## Correo
+`Dockerfile`, `compose.deploy.yml` y `.dockerignore` empaquetan la tienda y el back-office en Apache con PHP, conservan las dos bases SQLite en un volumen persistente y comprueban `/health` de forma automática. Hace falta un servidor con Docker, un dominio y un proxy inverso HTTPS; n8n se despliega aparte. Pasos y precauciones en [docs/despliegue-docker.md](docs/despliegue-docker.md).
 
-`MAIL_DRIVER` en el `.env`:
+## Seguridad y secretos
 
-- `log` (por defecto): no envía nada; guarda el correo como `.eml` en `storage/mail/`.
-- `smtp`: envío real por SMTP, también desde tu ordenador. Con Gmail: activa la verificación en 2 pasos, crea una *contraseña de aplicación* (https://myaccount.google.com/apppasswords) y rellena `SMTP_*` y `MAIL_FROM` (misma cuenta que `SMTP_USER`).
-- `mail`: `mail()` de PHP; solo funciona en un hosting con correo configurado.
-
-Prueba rápida sin hacer pedidos: `php database/test-mail.php destino@ejemplo.com`. Un fallo de correo nunca deshace un pedido ni un cambio de estado: queda como evento `*.failed`.
-
-## Seguridad y privacidad
-
-- Sin credenciales en el código ni en el repositorio: `.env` y `storage/` están en `.gitignore`; `.env.example` solo lleva valores de ejemplo.
-- Contraseñas con `password_hash`, sesiones `HttpOnly`/`SameSite`, token CSRF en todos los formularios que modifican datos, consultas preparadas y salida HTML escapada.
-- Importes y stock se recalculan en el servidor al pagar. De la tarjeta solo se guardan los 4 últimos dígitos.
-- Todos los datos son ficticios. La exportación de eventos neutraliza fórmulas de hoja de cálculo (`=`, `+`, `-`, `@`).
-
-**Antes de entregar o subir a GitHub:** no incluir el `.env`; si has usado una contraseña de aplicación de Google, revócala; y regenera la base de datos con `composer db:init && composer db:demo` para que no queden pedidos con datos reales.
-
-## Despliegue en DonDominio
-
-El hosting usa **PHP 8.5 con `pdo_sqlite`** (comprobado con `phpinfo()`). Solo hay acceso por FTP, así que las dependencias se instalan en local y se sube `vendor/`.
-
-El dominio apunta a la carpeta `/public/` del FTP ([ayuda de DonDominio](https://www.dondominio.com/es/help/121/para-que-sirven-las-distintas-carpetas-mi-dominio/)), que coincide con nuestra `public/`. El resto del proyecto va en la raíz del FTP, al mismo nivel que `/public/`.
-
-1. Comprobar la versión en el panel del hosting: **Sitios web → Versión PHP** (debe ser 8.1 o superior).
-2. En local, instalar las dependencias sin las de desarrollo:
-   ```bash
-   composer install --no-dev --optimize-autoloader
-   ```
-3. Conectarse por FTP (FileZilla). Los datos de acceso están en la sección **FTP** del panel ([ayuda](https://www.dondominio.com/es/help/120/como-subo-web-mediante-ftp/)).
-   Activar *Servidor → Forzar mostrar archivos ocultos* para ver los `.htaccess`.
-4. Subir a la raíz del FTP: `src/`, `templates/`, `database/`, `storage/`, `vendor/`, `.htaccess`, y el contenido de nuestra `public/` dentro de `/public/`.
-   Ojo: hay dos `.htaccess` con el mismo nombre. Si el de la raíz acaba en `/public/`, toda la web da 403.
-   No subir `.git/`, `.env` ni ningún `.sqlite` local.
-5. Crear en la raíz del FTP un `.env` a partir de `.env.example` con `APP_ENV=production`, `APP_DEBUG=false`, un `ADMIN_PASSWORD` propio (no dejes `admin1234` en un servidor público) y el correo: `MAIL_DRIVER=mail` con un `MAIL_FROM` de tu dominio, o `MAIL_DRIVER=smtp` con los datos SMTP de un buzón (ver [Correo](#correo)).
-6. Dar permisos de escritura a `storage/` con `chmod` desde el cliente FTP (SQLite necesita escribir en la carpeta, no solo en el fichero).
-7. Abrir `http://<dominio>/health`. En la primera petición se crea la base de datos **con el catálogo (12 productos) y el cliente de prueba**, sin ejecutar ningún comando.
-8. *(Opcional)* Para tener pedidos y eventos de demostración en el servidor, sube el `storage/zapatero.sqlite` generado en local con `composer db:init && composer db:demo` (solo contiene datos ficticios; ver más abajo). Hazlo antes de la primera visita, o borra antes el fichero del servidor.
-
-Si algo falla, los errores se ven en el panel: **Sitios web → Ver logs → "Servidor web - Últimos errores"** ([ayuda](https://www.dondominio.com/es/help/278/como-visualizar-logs-errores/)).
-
-Para actualizar, basta con volver a subir los ficheros cambiados (y `vendor/` si cambió `composer.lock`). No hay que sobrescribir `storage/`.
+- **Nunca se suben a git** `.env`, `n8n/n8n.env`, `storage/` ni `vendor/` (ya están en `.gitignore`). Solo se versionan los ficheros `.example`.
+- No pegues tokens ni claves en chats, capturas, issues ni commits. Si una clave se filtra, **revócala**: la contraseña de aplicación de Google, el token del bot (en @BotFather) y la clave del modelo.
+- Los tokens de la API son de **prueba**. En n8n se leen de variables de entorno (`N8N_BLOCK_ENV_ACCESS_IN_NODE=false`): válido en local; en producción se usarían las *Credentials* de n8n.
+- El agente solo recibe los datos mínimos (pedido y cliente de su ticket, sin email ni ciudad), no puede cancelar pedidos, conceder reembolsos ni pedir datos de pago, y trata el texto del cliente como dato no fiable.
+- Contraseñas con `password_hash`, sesiones `HttpOnly`/`SameSite`, token CSRF en los formularios, consultas preparadas y salida HTML escapada.
 
 ## Limitaciones conocidas
 
 - SQLite admite una sola escritura simultánea: suficiente para un prototipo, no para tráfico real.
-- El pago es una simulación; no hay pasarela, 3-D Secure ni conciliación.
-- Las solicitudes de soporte se guardan y se muestran al administrador en el detalle del pedido, pero no hay bandeja de tickets ni respuesta desde la aplicación (el estado queda en «abierta»).
-- La exportación de eventos exige sesión de administrador (no hay API con token para sistemas externos).
-- El stock se descuenta al pagar, no al añadir al carrito: dos clientes pueden tener la misma última unidad en el carrito y el segundo en pagar verá el aviso.
-- No hay recuperación de contraseña ni límite de intentos de inicio de sesión.
-- El administrador se crea desde el `.env` solo la primera vez; cambiar `ADMIN_PASSWORD` después no actualiza la contraseña ya guardada.
-- El envío de correo depende de un servidor SMTP externo; sin él se usa el modo `log`.
-- Los tests son un test de humo del flujo principal, no una batería exhaustiva.
+- La integración es de tipo *pull*: n8n consulta cada minuto, así que hay una latencia de hasta un minuto.
+- Los tokens Bearer son estáticos y sin rotación.
+- Cada persona necesita su propio bot de Telegram; dos instancias de n8n no pueden compartir el mismo bot.
+- El agente depende de un servicio de modelo externo (con límites de uso en las capas gratuitas); sin él, funciona en modo seguro.
+- El historial de ejecuciones de n8n se conserva 14 días (`EXECUTIONS_DATA_MAX_AGE=336` horas), así que las evidencias deben guardarse antes.
+- El endpoint `POST /bo/api/v1/telegram/link` admite aún `order_code` para pruebas internas (exige el token Bearer del back-office); en producción se eliminaría.
+- La imagen de n8n usa la etiqueta `latest`; conviene fijar la versión (`docker exec zapatero-n8n n8n --version`).
+- Limitaciones de la Tarea 1: pago simulado, sin recuperación de contraseña, stock descontado al pagar, tests de humo.
 
-## Tarea 2: integración y automatización
+## Punto de partida y uso de IA
 
-La configuración incluida arranca la tienda, el back-office y n8n **en local para desarrollo**. Esto todavía no satisface el requisito de entrega: el enunciado original (§3 y §9.a) pide que n8n y el back-office sean accesibles fuera de la red local del grupo. Antes de entregar, desplegad ambos servicios y sustituid esta nota por sus URLs públicas. La guía local paso a paso para Windows está en [`n8n/README.md`](n8n/README.md).
-
-### Arranque rápido en Windows
-
-1. Instala PHP 8.1 o superior con `pdo_sqlite`, Composer y Docker Desktop.
-2. En la raíz del proyecto, instala dependencias y crea la configuración local:
-   ```powershell
-   composer install
-   Copy-Item .env.example .env
-   ```
-3. Edita `.env` localmente: genera valores distintos para `API_TOKEN` y `BO_API_TOKEN`, y configura `MAIL_DRIVER=log`. No compartas ese fichero. Mantén las variables SMTP y de cuenta de correo según la configuración proporcionada al equipo.
-4. Inicializa la tienda y arráncala en una terminal:
-   ```powershell
-   composer db:init
-   composer start:lan
-   ```
-   `start:lan` permite que el contenedor de n8n acceda al servidor PHP. Abre `http://localhost:8000`.
-5. En otra terminal, crea `n8n/n8n.env` desde `n8n/n8n.env.example`, completa los tokens para que coincidan con `.env` y sigue [`n8n/README.md`](n8n/README.md) para arrancar n8n, importar y activar los tres workflows.
-6. Abre `http://localhost:5678`. Las variables de Telegram y del modelo de IA son opcionales para arrancar; sin ellas, las funciones correspondientes no podrán completar sus acciones externas.
-
-Los valores de cada equipo son locales. No incluyas `.env`, `n8n/n8n.env`, `storage/`, bases SQLite, tokens ni claves en Git, capturas o el ZIP de entrega. Los `.example` contienen solo valores de plantilla.
-
-### Workflows y pruebas
-
-Los workflows exportados están en `n8n/workflows/`: sincronización de pedidos, gestión de incidencias con agente supervisado y ejecución/notificación por Telegram. Los payloads de escenario están en `n8n/payloads/`. En `n8n/README.md` se describen la importación, activación, escenarios de prueba y resultados esperados.
-
-Para ejecutar las suites del proyecto, usa `composer test` con PHP y las dependencias instaladas. Las capturas de n8n, back-office, Telegram y métricas deben obtenerse con una ejecución real en el equipo que prepare la defensa; no se sustituyen por los payloads de ejemplo.
-
-### Back-office y métricas
-
-Entra como administrador en `/login`; las credenciales locales se configuran en `.env`. El back-office de la integración está bajo `/bo`, incluido el registro en `/bo/integracion`, tickets en `/bo/tickets`, revisión humana en `/bo/agente` y cuadro de mando en `/bo/metricas`. La matriz comparativa de implantación se documenta en [`docs/matriz-decision.md`](docs/matriz-decision.md). La justificación de las métricas está en [`docs/metricas-justificacion.md`](docs/metricas-justificacion.md) con referencias comprobadas y límites documentados.
-
-### Limitaciones conocidas de la integración
-
-- Es un prototipo académico con datos ficticios; el pago es simulado y no debe usarse para actividad comercial.
-- La sincronización periódica puede tardar hasta un minuto. SQLite admite una sola escritura simultánea.
-- n8n y el agente requieren configuración local adicional; Telegram y el modelo dependen de sus servicios externos.
-- Los tokens Bearer y el acceso a variables de entorno están pensados para la demostración local. Una implantación real requiere gestión de secretos, rotación, controles de acceso y evaluación de privacidad.
-- Las métricas y evidencias de demostración dependen de datos generados durante las pruebas; con pocos pedidos sus valores no son representativos de un negocio real.
-
-### Página de presentación
-
-La ruta /quienes-somos presenta el concepto de la tienda, explica que es un prototipo académico y resume el recorrido de compra de prueba.
-
-
-### Despliegue con Docker en un servidor
-
-Para preparar la aplicación PHP y el back-office en un servidor externo con dominio, volumen persistente para SQLite y comprobación automática de salud, consulta [`docs/despliegue-docker.md`](docs/despliegue-docker.md). Incluye `Dockerfile`, `compose.deploy.yml` y `.dockerignore`. Hace falta configurar aparte el servidor, el dominio y HTTPS; la configuración no despliega por sí sola una URL pública.
+_(Completar por el grupo con exactitud: repositorio o plantilla de terceros utilizado, partes generadas con IA y partes desarrolladas por el grupo. Esta declaración es obligatoria en la memoria. Ver también el anexo de uso de IA generativa.)_

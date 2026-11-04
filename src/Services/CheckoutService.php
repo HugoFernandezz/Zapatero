@@ -31,21 +31,11 @@ final class CheckoutService
             'postal_code' => strtoupper(trim((string) ($input['postal_code'] ?? ''))),
             'province' => trim((string) ($input['province'] ?? '')),
         ];
-        // Normaliza espacios repetidos antes de validar, sin alterar letras ni acentos.
-        foreach (['full_name', 'city', 'province'] as $field) {
-            $data[$field] = preg_replace('/\s+/u', ' ', $data[$field]) ?? $data[$field];
-        }
         $errors = [];
         foreach (['full_name' => 'El nombre', 'email' => 'El email', 'address' => 'La dirección',
                   'city' => 'La localidad', 'postal_code' => 'El código postal', 'province' => 'La provincia'] as $field => $label) {
             if ($data[$field] === '') $errors[$field] = "$label es obligatorio.";
             elseif (mb_strlen($data[$field]) > 160) $errors[$field] = "$label es demasiado largo.";
-        }
-        // Acepta letras Unicode, espacios y separadores habituales de nombres propios.
-        foreach (['full_name' => 'El nombre', 'city' => 'La localidad', 'province' => 'La provincia'] as $field => $label) {
-            if ($data[$field] !== '' && !preg_match("/^[\\p{L}\\p{M}]+(?:[ '\\x{2019}-][\\p{L}\\p{M}]+)*$/u", $data[$field])) {
-                $errors[$field] = "$label solo puede contener letras, espacios, guiones y apóstrofos.";
-            }
         }
         if ($data['email'] !== '' && (!filter_var($data['email'], FILTER_VALIDATE_EMAIL) || mb_strlen($data['email']) > 254)) {
             $errors['email'] = 'Introduce un email válido.';

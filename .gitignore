@@ -16,6 +16,8 @@ desktop.ini
 .env
 .env.*
 !.env.example
+# Variables de n8n (tokens de prueba): nunca al repositorio
+n8n/n8n.env
 vendor/
 storage/*
 !storage/.htaccess
@@ -42,3 +44,10 @@ dist/
 *.tmp
 *.bak
 *~
+
+# Bases locales, comprobaciones y paquetes de entrega
+*.sqlite
+*.sqlite-*
+*.db
+tmp/
+output/*.zip

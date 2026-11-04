@@ -19,11 +19,58 @@ final class Database
         $pdo->exec('PRAGMA foreign_keys = ON');
         $pdo->exec('PRAGMA journal_mode = WAL');
 
-        // Si el fichero no existía se crea el esquema (así el servidor no necesita SSH).
+        // Si el fichero no existía se crea el esquema y el catálogo (así el servidor no necesita SSH).
         if ($isNew) {
             $pdo->exec(file_get_contents(__DIR__ . '/../database/schema.sql'));
+            CatalogSeeder::run($pdo);
         }
+
+        self::migrate($pdo);
 
         return $pdo;
     }
+
+    /**
+     * Cambios de esquema para bases de datos ya creadas (el hosting solo tiene FTP, sin comandos).
+     * Son idempotentes: se ejecutan en cada petición y no hacen nada si ya existen.
+     */
+    private static function migrate(PDO $pdo): void
+    {
+        // Se consulta antes para no pedir bloqueo de escritura en cada petición cuando ya está todo creado.
+        $has = static fn (string $type, string $name): bool => $pdo
+            ->query("SELECT 1 FROM sqlite_master WHERE type = '" . $type . "' AND name = '" . $name . "'")
+            ->fetchColumn() !== false;
+
+        if (!$has('table', 'cart_items')) {
+            $pdo->exec(
+                'CREATE TABLE IF NOT EXISTS cart_items (
+                    user_id    INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+                    variant_id INTEGER NOT NULL REFERENCES product_variants (id) ON DELETE CASCADE,
+                    quantity   INTEGER NOT NULL CHECK (quantity > 0),
+                    PRIMARY KEY (user_id, variant_id)
+                )'
+            );
+        }
+        // T2: identificador único y versión de contrato en cada evento (idempotencia al integrar).
+        $eventColumns = array_column($pdo->query('PRAGMA table_info(events)')->fetchAll(), 'name');
+        if (!in_array('event_id', $eventColumns, true)) {
+            $pdo->exec('ALTER TABLE events ADD COLUMN event_id TEXT');
+        }
+        if (!in_array('schema_version', $eventColumns, true)) {
+            $pdo->exec('ALTER TABLE events ADD COLUMN schema_version INTEGER NOT NULL DEFAULT 1');
+        }
+        if ($pdo->query('SELECT 1 FROM events WHERE event_id IS NULL LIMIT 1')->fetchColumn() !== false) {
+            $pdo->exec("UPDATE events SET event_id = 'evt_' || lower(hex(randomblob(16))) WHERE event_id IS NULL");
+        }
+        if (!$has('index', 'idx_events_event_id')) {
+            $pdo->exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_events_event_id ON events (event_id)');
+        // Bases creadas antes de existir los códigos de descuento.
+        if ($pdo->query('SELECT 1 FROM discount_codes LIMIT 1')->fetchColumn() === false) {
+            CatalogSeeder::seedDiscountCodes($pdo);
+        }
+        if (!$has('index', 'idx_orders_user')) {
+            $pdo->exec('CREATE INDEX IF NOT EXISTS idx_orders_user ON orders (user_id)');
+        }
+    }
+}
 }

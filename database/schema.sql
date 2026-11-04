@@ -86,6 +86,14 @@ CREATE TABLE payments (
     created_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 
+-- Carrito persistente de los usuarios con sesión iniciada (variant_id => cantidad).
+CREATE TABLE IF NOT EXISTS cart_items (
+    user_id    INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    variant_id INTEGER NOT NULL REFERENCES product_variants (id) ON DELETE CASCADE,
+    quantity   INTEGER NOT NULL CHECK (quantity > 0),
+    PRIMARY KEY (user_id, variant_id)
+);
+
 CREATE TABLE support_tickets (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     order_id   INTEGER REFERENCES orders (id),
@@ -96,7 +104,9 @@ CREATE TABLE support_tickets (
 );
 
 CREATE TABLE events (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_id       TEXT,                       -- identificador global (evt_ + 32 hex): clave de idempotencia
+    schema_version INTEGER NOT NULL DEFAULT 1, -- versión del contrato del payload
     type        TEXT NOT NULL,
     occurred_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
     session_id  TEXT,
@@ -107,5 +117,7 @@ CREATE TABLE events (
 CREATE INDEX idx_products_collection ON products (collection_id);
 CREATE INDEX idx_products_style ON products (style_id);
 CREATE INDEX idx_orders_status ON orders (status);
+CREATE INDEX idx_orders_user ON orders (user_id);
 CREATE INDEX idx_events_type ON events (type);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_events_event_id ON events (event_id);
 CREATE INDEX idx_events_occurred_at ON events (occurred_at);

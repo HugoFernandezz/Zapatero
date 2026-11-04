@@ -1,0 +1,10 @@
+{
+  "event_id": "no-es-un-evento-valido",
+  "schema_version": 2,
+  "type": "order.created",
+  "occurred_at": "ayer",
+  "payload": {
+    "order_code": "PEDIDO-1",
+    "total_cents": "10800"
+  }
+}

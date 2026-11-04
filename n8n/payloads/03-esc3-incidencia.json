@@ -1,0 +1,10 @@
+{
+  "event_id": "__EVENT_ID__",
+  "schema_version": 1,
+  "type": "incident.created",
+  "occurred_at": "__NOW__",
+  "payload": {
+    "order_code": "__ORDER_CODE__",
+    "motivo": "El cliente indica que la caja llegó golpeada y una de las zapatillas tiene la suela despegada."
+  }
+}

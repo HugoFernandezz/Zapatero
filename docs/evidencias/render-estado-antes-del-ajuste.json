@@ -1,0 +1,9 @@
+{
+  "fecha_utc": "2026-11-03T19:08:29.1864339Z",
+  "url": "https://zapatero-n8n.onrender.com/healthz",
+  "estado_http": 502,
+  "commit_desplegado": "ce39b88",
+  "observacion": "Render marcaba Live, pero la comprobacion HTTPS publica no era correcta y se observo un nuevo inicio del proceso.",
+  "accion_posterior": "Commit 97199dc: limitar memoria y concurrencia manteniendo el plan Free. La estabilidad debe comprobarse despues de desplegar el ajuste.",
+  "alcance": "Comprobacion desde el equipo ejecutor; no acredita una segunda red. Sin secretos ni cuerpo HTML."
+}

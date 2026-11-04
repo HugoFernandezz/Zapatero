@@ -1,0 +1,11 @@
+{
+  "event_id": "__EVENT_ID__",
+  "schema_version": 1,
+  "type": "order.created",
+  "occurred_at": "__NOW__",
+  "payload": {
+    "order_code": "__ORDER_CODE__",
+    "total_cents": 10800,
+    "items": 1
+  }
+}

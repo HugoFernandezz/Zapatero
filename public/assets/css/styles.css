@@ -476,10 +476,47 @@ select {
 
 .site-footer {
     margin-top: 3rem;
-    padding: 1.5rem;
+    padding: 2.75rem max(1rem, calc((100% - 1180px) / 2));
     color: var(--muted);
+    background: var(--soft);
     border-top: 1px solid var(--line);
-    text-align: center;
+}
+
+.footer-grid { display: grid; grid-template-columns: 1.3fr 0.8fr 1fr; gap: 2.5rem; }
+.footer-intro { max-width: 40ch; }
+.footer-intro .brand { color: var(--ink); }
+.footer-intro > p { margin: 1rem 0; }
+.footer-prototype { padding-left: 1rem; border-left: 3px solid var(--accent); color: var(--ink); font-size: 0.95rem; }
+.footer-grid h2 { margin: 0 0 1rem; color: var(--ink); font-size: 1rem; }
+.footer-grid nav a { display: block; width: fit-content; padding: 0.3rem 0; }
+.site-footer a:hover { color: var(--accent-dark); text-decoration: underline; text-underline-offset: 0.2em; }
+.footer-bottom { margin: 2rem 0 0; padding-top: 1.25rem; border-top: 1px solid var(--line); font-size: 0.85rem; }
+.footer-bottom a { text-decoration: underline; text-underline-offset: 0.2em; }
+
+/* Información visible y políticas del prototipo. */
+.policies-hero { max-width: 850px; padding: clamp(2rem, 5vw, 4rem) 0 1.5rem; }
+.policies-hero h1 { margin: 0.7rem 0 1rem; font-size: clamp(2.2rem, 5vw, 4rem); letter-spacing: -0.045em; line-height: 1.08; }
+.policies-hero > p:last-of-type { color: var(--muted); font-size: 1.15rem; }
+.policies-notice { margin-top: 1.75rem; padding: 1.25rem 1.5rem; background: #f9e9b2; border: 1px solid #e7cb72; border-radius: 0.7rem; }
+.policies-notice strong { display: block; margin-bottom: 0.35rem; }
+.policies-index { display: flex; flex-wrap: wrap; gap: 0.6rem; padding: 0.5rem 0 2rem; }
+.policies-index a { padding: 0.6rem 0.9rem; color: var(--accent-dark); border: 1px solid var(--line); border-radius: 2rem; font-size: 0.9rem; font-weight: 700; }
+.policies-index a:hover { background: var(--soft); }
+.policy-section { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: clamp(2rem, 6vw, 6rem); padding: 2.5rem 0; border-top: 1px solid var(--line); scroll-margin-top: 7rem; }
+.policy-section h2 { margin: 0; max-width: 20ch; font-size: clamp(1.7rem, 3vw, 2.5rem); line-height: 1.15; letter-spacing: -0.025em; }
+.policy-section > div:last-child { max-width: 66ch; color: var(--muted); }
+.policy-section > div:last-child > :first-child { margin-top: 0; }
+.policy-section strong { color: var(--ink); }
+.policy-steps { padding-left: 1.4rem; }
+.policy-steps li { padding: 0 0 0.9rem 0.35rem; }
+.policy-section code { overflow-wrap: anywhere; }
+.policies-cta { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; padding: 1.5rem; background: var(--soft); border-radius: 0.7rem; }
+.policies-cta p { margin: 0; font-weight: 700; }
+.site-footer a:focus-visible, .policies-index a:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; border-radius: 0.2rem; }
+@media (max-width: 760px) {
+    .footer-grid, .policy-section { grid-template-columns: 1fr; gap: 1.5rem; }
+    .policy-section { scroll-margin-top: 10rem; }
+    .main-nav { flex-wrap: wrap; }
 }
 
 .notice { margin: 1rem 0; padding: 0.85rem 1rem; border-radius: 0.45rem; }
@@ -564,3 +601,100 @@ select {
         flex-direction: column;
     }
 }
+
+/* ---- M4 · Pago simulado, pedidos y back-office ---- */
+.summary-sub { margin: 1rem 0 0.2rem; font-size: 0.95rem; }
+.test-cards { margin-bottom: 1.2rem; padding: 0.8rem 1rem; background: var(--soft); border: 1px dashed var(--line); border-radius: 0.45rem; font-size: 0.92rem; }
+.test-cards ul { margin: 0.4rem 0; padding-left: 1.2rem; }
+.test-cards code, .data-table code, .page-heading code { padding: 0.05rem 0.35rem; background: #fff; border: 1px solid var(--line); border-radius: 0.25rem; font-size: 0.88em; }
+.order-code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.6em; letter-spacing: 0.02em; }
+
+.badge { display: inline-block; padding: 0.1rem 0.6rem; border-radius: 999px; font-size: 0.8rem; font-weight: 700; white-space: nowrap; background: #eceff1; color: #37474f; }
+.badge-created { background: #eceff1; color: #37474f; }
+.badge-paid_simulated { background: #e3f2fd; color: #0d47a1; }
+.badge-pending_preparation { background: #fff4d6; color: #7a5600; }
+.badge-shipped { background: #e5f4e9; color: #155b36; }
+.badge-incident { background: #ffe3de; color: #8a2618; }
+.badge-cancelled { background: #f1f1f1; color: #6b6b6b; text-decoration: line-through; }
+
+.invoice-actions { display: flex; gap: 0.6rem; margin: 1rem 0; }
+.invoice-sheet { overflow-x: auto; padding-bottom: 2rem; }
+@media print {
+    .prototype-banner, .site-header, .site-footer, .page-heading, .invoice-actions { display: none !important; }
+}
+
+.admin-heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; flex-wrap: wrap; }
+.admin-heading form { display: flex; align-items: center; gap: 0.6rem; }
+.admin-login { max-width: 26rem; }
+.status-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0; }
+.chip { padding: 0.3rem 0.8rem; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: 0.88rem; }
+.chip.active { color: #fff; background: var(--accent); border-color: var(--accent); }
+.admin-search { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.admin-search input[type="search"] { min-width: 16rem; }
+.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 0.5rem; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+.data-table th, .data-table td { padding: 0.65rem 0.8rem; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+.data-table th { background: var(--soft); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.data-table tbody tr:last-child td { border-bottom: 0; }
+.pagination { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 1rem 0 2rem; flex-wrap: wrap; }
+.admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; align-items: start; }
+.admin-grid .summary-card { position: static; }
+.admin-section { margin: 2rem 0; }
+.admin-totals { max-width: 22rem; margin-left: auto; }
+.status-form select { width: 100%; }
+.timeline { margin: 0; padding: 0; list-style: none; border-left: 2px solid var(--line); }
+.timeline li { position: relative; display: flex; flex-wrap: wrap; gap: 0.2rem 0.8rem; padding: 0.4rem 0 0.4rem 1.1rem; }
+.timeline li::before { content: ""; position: absolute; left: -0.4rem; top: 0.85rem; width: 0.7rem; height: 0.7rem; border-radius: 50%; background: var(--accent); }
+.timeline time { color: var(--muted); font-size: 0.85rem; min-width: 8.5rem; }
+
+@media (max-width: 900px) {
+    .admin-grid { grid-template-columns: 1fr; }
+}
+
+/* --- Cuenta de cliente, login y navegación --- */
+.main-nav { flex-wrap: wrap; }
+.nav-logout { display: inline-flex; align-items: center; gap: 0.6rem; margin: 0; }
+.nav-user { color: var(--ink); font-weight: 700; }
+.nav-link-button { padding: 0; border: 0; background: none; color: inherit; font: inherit; font-weight: 700; cursor: pointer; }
+.nav-link-button:hover { color: var(--accent); }
+.nav-login { padding: 0.35rem 0.9rem; color: #fff; background: var(--accent); border-radius: 0.45rem; }
+.main-nav a.nav-login:hover { color: #fff; background: var(--accent-dark); }
+
+/* --- Seguimiento del pedido --- */
+.tracking { margin: 1.2rem 0 2rem; }
+.tracking-list { margin: 0.8rem 0; padding-left: 1.2rem; display: grid; gap: 0.5rem; }
+
+/* --- Back-office: navegación y productos --- */
+.admin-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 1.2rem; }
+.admin-nav-logout { display: flex; align-items: center; gap: 0.6rem; margin: 0 0 0 auto; }
+.admin-thumb { width: 56px; height: 56px; object-fit: cover; border: 1px solid var(--line); border-radius: 0.35rem; }
+.admin-thumb.large { width: 120px; height: 120px; }
+.row-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.row-actions form { margin: 0; }
+.button.danger { color: #8a2618; border-color: #efc0b8; }
+.button.danger:hover { background: #fff0ed; }
+.product-admin-form { max-width: 44rem; }
+.form-field select, .form-field textarea { min-height: 2.65rem; padding: 0.55rem 0.65rem; border: 1px solid var(--line); border-radius: 0.4rem; font: inherit; background: #fff; }
+.form-field textarea { resize: vertical; }
+.stock-fieldset { margin: 0 0 1.2rem; padding: 0.9rem 1rem; border: 1px solid var(--line); border-radius: 0.5rem; }
+.stock-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr)); gap: 0.7rem; }
+.stock-grid label { display: grid; gap: 0.25rem; font-weight: 700; }
+.stock-grid input { min-height: 2.4rem; padding: 0.4rem 0.5rem; border: 1px solid var(--line); border-radius: 0.4rem; font: inherit; }
+
+/* Soporte del pedido */
+.support-card { position: static; margin-top: 1.25rem; }
+.support-list { margin: 0 0 1rem; padding-left: 1.1rem; }
+.support-list li { margin-bottom: 0.5rem; }
+.support-list p { margin: 0.25rem 0 0; }
+
+/* Acciones de cabecera del back-office */
+.admin-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+
+/* Botón «Recibir avisos por Telegram» (página del pedido) */
+.telegram-card { position: static; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1.2rem; background: linear-gradient(135deg, #e6f5fc 0%, #ffffff 70%); border-color: #b6dff3; }
+.telegram-card h2 { margin-bottom: 0.3rem; }
+.telegram-card p { margin: 0; max-width: 46ch; }
+.telegram-card form { margin: 0; }
+.button-telegram { display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.9rem 1.6rem; border: 0; border-radius: 999px; background: #229ed9; color: #fff; font: inherit; font-size: 1.05rem; font-weight: 800; text-decoration: none; cursor: pointer; box-shadow: 0 10px 24px rgba(34, 158, 217, 0.38); transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease; }
+.button-telegram:hover { background: #1a86bb; transform: translateY(-2px); box-shadow: 0 14px 28px rgba(34, 158, 217, 0.45); }
+.button-telegram:focus-visible { outline: 3px solid #094f56; outline-offset: 3px; }

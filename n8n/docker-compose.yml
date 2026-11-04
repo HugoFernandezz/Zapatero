@@ -1,0 +1,36 @@
+# n8n para el prototipo académico Zapatero (Tarea 2). Solo para uso local de desarrollo y demo.
+# Uso:  docker compose up -d      (desde esta carpeta, con n8n.env ya creado a partir de n8n.env.example)
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest   # Cuando todo funcione, fija la versión: docker exec zapatero-n8n n8n --version
+    container_name: zapatero-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    env_file:
+      - n8n.env                              # tokens de PRUEBA; este fichero NO se sube a git
+    environment:
+      - GENERIC_TIMEZONE=Europe/Madrid
+      - TZ=Europe/Madrid
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:5678/
+      - N8N_SECURE_COOKIE=false              # solo porque es http://localhost
+      # Los workflows leen las URLs y tokens con $env: en n8n 2.x está bloqueado por defecto.
+      # Decisión consciente y solo válida en local/académico; en producción se usarían Credentials de n8n.
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_PERSONALIZATION_ENABLED=false
+      # Se conserva el historial de ejecuciones 14 días (evidencia de trazabilidad).
+      - EXECUTIONS_DATA_SAVE_ON_ERROR=all
+      - EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=336
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # para llegar al PHP del PC anfitrión
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+volumes:
+  n8n_data:

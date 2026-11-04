@@ -44,7 +44,7 @@ $money = static fn (int $cents): string => number_format($cents / 100, 2, ',', '
             <form method="post" action="/carrito/descuento" class="discount-form">
                 <input type="hidden" name="_csrf" value="<?= $esc($csrfToken) ?>">
                 <label for="discount_code">Código de descuento</label>
-                <input id="discount_code" name="discount_code" value="<?= $esc($summary['discount_code'] ?? '') ?>" maxlength="32" placeholder="BIENVENIDA10 o ZAP5">
+                <input id="discount_code" name="discount_code" value="<?= $esc($enteredCode ?? '') ?>" maxlength="32" placeholder="BIENVENIDA10 o ZAP5">
                 <button class="button secondary" type="submit">Aplicar</button>
             </form>
             <dl class="totals">
@@ -56,6 +56,9 @@ $money = static fn (int $cents): string => number_format($cents / 100, 2, ',', '
                 <div><dt>IVA incluido (21 %)</dt><dd><?= $money((int) $summary['tax_cents']) ?></dd></div>
                 <div class="grand-total"><dt>Total</dt><dd><?= $money((int) $summary['total_cents']) ?></dd></div>
             </dl>
+            <?php if (empty($_SESSION['user_id'])): ?>
+                <p class="muted"><a class="text-link" href="/login?next=/carrito">Inicia sesión</a> y obtén un <?= (int) \App\Services\CartService::MEMBER_PERCENT ?> % de descuento en esta compra.</p>
+            <?php endif; ?>
             <?php if ($summary['subtotal_cents'] < 6000): ?><p class="muted">Envío gratis desde 60,00 € de subtotal.</p><?php endif; ?>
             <a class="button primary full-width" href="/checkout">Continuar al checkout</a>
             <a class="text-link" href="/catalogo">Seguir comprando</a>
