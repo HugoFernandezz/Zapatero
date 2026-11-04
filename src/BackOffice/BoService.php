@@ -390,28 +390,6 @@ final class BoService
 
     // =============== TELEGRAM / ESTADO / LOG ===============
 
-    public function linkTelegram(string $orderCode, string $chatId): array
-    {
-        $errors = [];
-        if (preg_match(self::ORDER_CODE, $orderCode) !== 1) {
-            $errors['order_code'] = 'Formato ZAP-AAAAMMDD-NNNN.';
-        }
-        if (preg_match('/^-?\d{4,20}$/', $chatId) !== 1) {
-            $errors['chat_id'] = 'Identificador numérico de Telegram.';
-        }
-        if ($errors !== []) {
-            throw BoException::validation($errors);
-        }
-        $order = $this->repo->order($orderCode);
-        if ($order === null) {
-            throw BoException::notFound('El pedido ' . $orderCode);
-        }
-        $this->repo->setTelegramChat((int) $order['customer_id'], $chatId);
-        $this->repo->log(null, 'telegram.linked', 'ok', 'n8n', null, null, 'Chat de Telegram vinculado al cliente del pedido.', 'order', $orderCode);
-
-        return ['result' => 'linked', 'order_code' => $orderCode];
-    }
-
     /**
      * Emite un token aleatorio de un solo uso (128 bits) para el enlace t.me/BOT?start=TOKEN.
      * Se devuelve en claro una única vez; en la base solo se guarda su hash SHA-256.
@@ -443,7 +421,7 @@ final class BoService
             $errors['chat_id'] = 'Identificador numérico de Telegram.';
         }
         if ($errors !== []) {
-            throw BoException::validation($errors);
+            $this->linkRejected(422, 'validation_failed', 'Se requieren un token de un solo uso y un chat_id numérico válidos.', null);
         }
 
         $row = $this->repo->telegramToken(hash('sha256', $token));

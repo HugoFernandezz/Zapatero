@@ -44,3 +44,10 @@ dist/
 *.tmp
 *.bak
 *~
+
+# Bases locales, comprobaciones y paquetes de entrega
+*.sqlite
+*.sqlite-*
+*.db
+tmp/
+output/*.zip

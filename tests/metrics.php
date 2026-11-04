@@ -123,6 +123,8 @@ $check(str_starts_with($svg, '<svg') && !str_contains($svg, '<script>') && str_c
 $check(str_contains(Charts::verticalBars(['2026-10-30', '2026-10-31'], [2, 0], 'Pedidos por día'), '<rect'), 'barras verticales generadas');
 $check(str_starts_with(Charts::horizontalBars([], 'vacío'), '<svg') && str_starts_with(Charts::verticalBars([], [], 'vacío'), '<svg'), 'gráficos vacíos no fallan');
 
+unset($metrics, $svc, $shop, $boPdo, $ev);
+gc_collect_cycles();
 foreach (glob($tmp . '/*') ?: [] as $f) {
     @unlink($f);
 }

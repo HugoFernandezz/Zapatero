@@ -1,5 +1,16 @@
 # Zapatero
 
+## Mejoras de políticas, Telegram y publicación
+
+La ruta `/politicas` y el pie común explican el funcionamiento, los pagos y envíos simulados, el soporte y el uso exclusivo de datos de prueba. La API de vinculación de Telegram exige el token de un solo uso: se retira el contrato antiguo que aceptaba solo un código de pedido.
+
+Las mejoras se integran sobre la versión del equipo en `fe1307d`, conservando sus APIs y cambios de datos. `composer test` incorpora una suite HTTP para comprobar la navegación y los rechazos de vinculación sin modificar el chat.
+
+La configuración de n8n está publicada por separado en la rama `codex/despliegue-n8n-irene` del fork de Irene. Su estado y las instrucciones de DonDominio figuran en [la guía de publicación](docs/despliegue-publico.md) y [la actualización del hosting](docs/actualizacion-dondominio.md). El 04/11/2026 se verificaron la publicación de n8n y back-office, siete comprobaciones públicas y una ejecución de lectura desde Render a DonDominio. WF1-WF3 están importados y sin publicar; la demostración con IA y Telegram requiere completar sus credenciales y pruebas conjuntas.
+
+La [memoria](docs/memoria.md) y el [anexo de IA](docs/anexo-ia.md) describen el estado comprobado. Los PDF se generan con `python scripts/generar-documentos.py` (ReportLab) en `output/pdf/`. El [guion de pruebas](docs/pruebas-y-defensa.md) distingue las comprobaciones locales de los escenarios externos pendientes.
+
+
 Prototipo académico de eCommerce (Soluciones Informáticas para la Empresa, UCAM). **Sin actividad comercial real**: los pagos son simulados y todos los datos son ficticios. La propia web lo indica en una franja visible en todas las páginas.
 
 - **Tarea 1:** canal digital de venta (tienda, carrito, pago simulado, back-office, eventos de negocio).

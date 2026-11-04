@@ -114,10 +114,12 @@ final class BoApiController
     {
         $b = $this->body($req);
 
-        // Camino normal: token de un solo uso del enlace t.me. (order_code se mantiene solo para pruebas internas con el Bearer del back-office.)
-        return $this->run($res, fn () => isset($b['token'])
-            ? $this->svc()->linkTelegramByToken((string) $b['token'], (string) ($b['chat_id'] ?? ''))
-            : $this->svc()->linkTelegram((string) ($b['order_code'] ?? ''), (string) ($b['chat_id'] ?? '')));
+        // El Bearer identifica a n8n; el token de un solo uso acredita acceso al pedido.
+        // Se retira la alternativa antigua que aceptaba solo order_code.
+        return $this->run($res, fn () => $this->svc()->linkTelegramByToken(
+            is_string($b['token'] ?? null) ? $b['token'] : '',
+            is_string($b['chat_id'] ?? null) ? $b['chat_id'] : ''
+        ));
     }
 
     public function writeLog(Request $req, Response $res): Response

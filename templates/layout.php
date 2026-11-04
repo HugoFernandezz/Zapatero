@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= htmlspecialchars($pageTitle ?? 'Zapatero', ENT_QUOTES, 'UTF-8') ?></title>
-    <link rel="stylesheet" href="/assets/css/styles.css">
+    <link rel="stylesheet" href="/assets/css/styles.css?v=<?= substr(hash_file('sha256', __DIR__ . '/../public/assets/css/styles.css'), 0, 12) ?>">
 </head>
 <body>
     <div class="prototype-banner" role="note">
-        <strong>Prototipo académico:</strong> esta tienda es ficticia. No se realizan pagos reales, envíos reales ni tratamiento de datos personales reales.
+        <strong>Prototipo académico:</strong> no hay ventas, pagos ni envíos reales. Utiliza únicamente datos de prueba.
     </div>
 
     <header class="site-header">
@@ -47,7 +47,27 @@
     </main>
 
     <footer class="site-footer">
-        <p>Zapatero · prototipo académico de eCommerce de zapatillas.</p>
+        <div class="footer-grid">
+            <div class="footer-intro">
+                <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">Z</span><span>Zapatero</span></a>
+                <p>Una tienda de zapatillas creada para aprender a conectar pedidos, atención y gestión.</p>
+                <p class="footer-prototype"><strong>Solo es una demostración.</strong><br>No se realizan ventas, cobros ni envíos reales.</p>
+            </div>
+            <nav aria-label="Sobre Zapatero">
+                <h2>La tienda</h2>
+                <a href="/carrito">Ver mi carrito</a>
+                <a href="/politicas#como-funciona">Cómo funciona</a>
+                <a href="/catalogo">Explorar el catálogo</a>
+            </nav>
+            <nav aria-label="Políticas del prototipo">
+                <h2>Información y políticas</h2>
+                <a href="/politicas#pagos-envios">Pagos y envíos simulados</a>
+                <a href="/politicas#cambios-devoluciones">Cambios y devoluciones</a>
+                <a href="/politicas#datos">Datos de prueba y cookies</a>
+                <a href="/politicas#soporte">Ayuda y Telegram</a>
+            </nav>
+        </div>
+        <p class="footer-bottom">Proyecto académico de Soluciones Informáticas para la Empresa · <a href="/politicas">Consultar todas las políticas</a></p>
     </footer>
 </body>
 </html>

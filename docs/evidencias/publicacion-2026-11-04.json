@@ -1,0 +1,56 @@
+{
+  "fecha_utc": "2026-11-04T05:56:04.1690364Z",
+  "resultado": "correcto",
+  "alcance": "Disponibilidad HTTP desde el equipo ejecutor; no demuestra por si sola los tres escenarios ni una segunda red.",
+  "pruebas": [
+    {
+      "prueba": "Tienda disponible",
+      "url": "https://www.zapatero.onl/health",
+      "http": 200,
+      "esperado": 200,
+      "correcto": true
+    },
+    {
+      "prueba": "Politicas publicadas",
+      "url": "https://www.zapatero.onl/politicas",
+      "http": 200,
+      "esperado": 200,
+      "correcto": true
+    },
+    {
+      "prueba": "Back-office exige login",
+      "url": "https://www.zapatero.onl/bo",
+      "http": 303,
+      "esperado": 303,
+      "correcto": true
+    },
+    {
+      "prueba": "API protegida",
+      "url": "https://www.zapatero.onl/bo/api/v1/metrics",
+      "http": 401,
+      "esperado": 401,
+      "correcto": true
+    },
+    {
+      "prueba": "n8n disponible",
+      "url": "https://zapatero-n8n.onrender.com/healthz",
+      "http": 200,
+      "esperado": 200,
+      "correcto": true
+    },
+    {
+      "prueba": "API de tienda autenticada",
+      "url": "https://www.zapatero.onl/api/v1/events?limit=1",
+      "http": 200,
+      "esperado": 200,
+      "correcto": true
+    },
+    {
+      "prueba": "API de back-office autenticada",
+      "url": "https://www.zapatero.onl/bo/api/v1/metrics",
+      "http": 200,
+      "esperado": 200,
+      "correcto": true
+    }
+  ]
+}
