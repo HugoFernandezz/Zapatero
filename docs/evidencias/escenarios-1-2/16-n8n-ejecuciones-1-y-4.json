@@ -1,0 +1,628 @@
+﻿[
+  {
+    "ejecucion": 1,
+    "workflow": "JqWgkBC295RCqXQB",
+    "modo": "trigger",
+    "estado": "success",
+    "inicio_utc": "2026-11-04 12:02:42.247",
+    "fin_utc": "2026-11-04 12:02:42.827",
+    "recorrido": [
+      {
+        "nodo": "Cada minuto",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Leer cursor",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Preparar consulta",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Pedir eventos nuevos",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Normalizar eventos (sondeo)",
+        "ejecuciones": 1,
+        "items_salida": 2,
+        "error": null
+      },
+      {
+        "nodo": "Procesar de uno en uno",
+        "ejecuciones": 3,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Validar contrato",
+        "ejecuciones": 2,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Enrutar por tipo",
+        "ejecuciones": 2,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Consultar pedido en la tienda",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Transformar a contrato back-office",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "¿Pedido preparado?",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Enviar pedido al back-office",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Clasificar resultado",
+        "ejecuciones": 2,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "¿Error técnico?",
+        "ejecuciones": 2,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Preparar cambio de estado",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Enviar cambio de estado",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Calcular cursor y resumen",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "¿Guardar cursor?",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Guardar cursor",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Respuesta",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      }
+    ],
+    "salidas_clave": {
+      "Validar contrato": [
+        {
+          "source": "poll",
+          "batch_next_cursor": 7,
+          "event": {
+            "event_id": "evt_993f0e0299e169e8b42bcbe792e72155",
+            "cursor_id": 4,
+            "schema_version": 1,
+            "type": "order.created",
+            "occurred_at": "2026-11-04T12:01:57Z",
+            "session_id": "462f3e8c204a3e23",
+            "user_id": null,
+            "payload": {
+              "order_code": "ZAP-20261104-0001",
+              "total_cents": 7890,
+              "items": 1
+            }
+          },
+          "event_id": "evt_993f0e0299e169e8b42bcbe792e72155",
+          "event_type": "order.created",
+          "cursor_id": 4,
+          "route": "order.created",
+          "errors": []
+        },
+        {
+          "source": "poll",
+          "batch_next_cursor": 7,
+          "event": {
+            "event_id": "evt_2699a28cfe081f8fb38b34c818d511df",
+            "cursor_id": 6,
+            "schema_version": 1,
+            "type": "order.status_changed",
+            "occurred_at": "2026-11-04T12:01:57Z",
+            "session_id": "462f3e8c204a3e23",
+            "user_id": null,
+            "payload": {
+              "order_code": "ZAP-20261104-0001",
+              "from": "created",
+              "to": "paid_simulated",
+              "by": "sistema"
+            }
+          },
+          "event_id": "evt_2699a28cfe081f8fb38b34c818d511df",
+          "event_type": "order.status_changed",
+          "cursor_id": 6,
+          "route": "order.status_changed",
+          "errors": []
+        }
+      ],
+      "Transformar a contrato back-office": [
+        {
+          "source": "poll",
+          "batch_next_cursor": 7,
+          "event": {
+            "event_id": "evt_993f0e0299e169e8b42bcbe792e72155",
+            "cursor_id": 4,
+            "schema_version": 1,
+            "type": "order.created",
+            "occurred_at": "2026-11-04T12:01:57Z",
+            "session_id": "462f3e8c204a3e23",
+            "user_id": null,
+            "payload": {
+              "order_code": "ZAP-20261104-0001",
+              "total_cents": 7890,
+              "items": 1
+            }
+          },
+          "event_id": "evt_993f0e0299e169e8b42bcbe792e72155",
+          "event_type": "order.created",
+          "cursor_id": 4,
+          "route": "order.created",
+          "errors": [],
+          "prepared": true,
+          "bo_payload": {
+            "event_id": "evt_993f0e0299e169e8b42bcbe792e72155",
+            "event_type": "order.created",
+            "workflow": "wf1-pedidos",
+            "execution_id": "1",
+            "occurred_at": "2026-11-04T12:01:57Z",
+            "order": {
+              "order_code": "ZAP-20261104-0001",
+              "status": "paid_simulated",
+              "created_at": "2026-11-04T12:01:57Z",
+              "status_updated_at": "2026-11-04T12:01:57Z",
+              "currency": "EUR",
+              "subtotal_cents": 7890,
+              "discount_cents": 0,
+              "shipping_cents": 0,
+              "tax_cents": 1369,
+              "total_cents": 7890,
+              "discount_code": null,
+              "customer_user_id": null,
+              "customer": {
+                "full_name": "Lucía Prueba Ficticia",
+                "email": "lucia.prueba@example.test",
+                "city": "Murcia",
+                "province": "Murcia"
+              },
+              "items": [
+                {
+                  "sku": "ZAP-PIXELPOP-38",
+                  "name": "Pixel Pop",
+                  "size_eu": 38,
+                  "quantity": 1,
+                  "unit_price_cents": 7890
+                }
+              ],
+              "payment": {
+                "method": "card_simulated",
+                "status": "approved",
+                "reference": "SIM-44124B9137",
+                "created_at": "2026-11-04T12:01:57Z"
+              },
+              "tickets": []
+            }
+          }
+        }
+      ],
+      "Preparar cambio de estado": [
+        {
+          "source": "poll",
+          "batch_next_cursor": 7,
+          "event": {
+            "event_id": "evt_2699a28cfe081f8fb38b34c818d511df",
+            "cursor_id": 6,
+            "schema_version": 1,
+            "type": "order.status_changed",
+            "occurred_at": "2026-11-04T12:01:57Z",
+            "session_id": "462f3e8c204a3e23",
+            "user_id": null,
+            "payload": {
+              "order_code": "ZAP-20261104-0001",
+              "from": "created",
+              "to": "paid_simulated",
+              "by": "sistema"
+            }
+          },
+          "event_id": "evt_2699a28cfe081f8fb38b34c818d511df",
+          "event_type": "order.status_changed",
+          "cursor_id": 6,
+          "route": "order.status_changed",
+          "errors": [],
+          "prepared": true,
+          "bo_payload": {
+            "event_id": "evt_2699a28cfe081f8fb38b34c818d511df",
+            "event_type": "order.status_changed",
+            "workflow": "wf1-pedidos",
+            "execution_id": "1",
+            "occurred_at": "2026-11-04T12:01:57Z",
+            "status": "paid_simulated"
+          }
+        }
+      ],
+      "Enviar pedido al back-office": [
+        {
+          "body": {
+            "result": "created",
+            "order_code": "ZAP-20261104-0001"
+          },
+          "statusCode": 201,
+          "statusMessage": "Created"
+        }
+      ],
+      "Enviar cambio de estado": [
+        {
+          "body": {
+            "result": "updated",
+            "order_code": "ZAP-20261104-0001"
+          },
+          "statusCode": 200,
+          "statusMessage": "OK"
+        }
+      ],
+      "Clasificar resultado": [
+        {
+          "source": "poll",
+          "event_id": "evt_993f0e0299e169e8b42bcbe792e72155",
+          "event_type": "order.created",
+          "cursor_id": 4,
+          "batch_next_cursor": 7,
+          "route": "order.created",
+          "outcome": "ok",
+          "result": "created",
+          "error_code": null,
+          "message": null
+        },
+        {
+          "source": "poll",
+          "event_id": "evt_2699a28cfe081f8fb38b34c818d511df",
+          "event_type": "order.status_changed",
+          "cursor_id": 6,
+          "batch_next_cursor": 7,
+          "route": "order.status_changed",
+          "outcome": "ok",
+          "result": "updated",
+          "error_code": null,
+          "message": null
+        }
+      ],
+      "Calcular cursor y resumen": [
+        {
+          "save": true,
+          "cursor": "7",
+          "summary": {
+            "processed": 2,
+            "ok": 2,
+            "rejected": 0,
+            "skipped": 0,
+            "errors": 0,
+            "results": [
+              {
+                "event_id": "evt_993f0e0299e169e8b42bcbe792e72155",
+                "type": "order.created",
+                "outcome": "ok",
+                "result": "created",
+                "error_code": null,
+                "message": null
+              },
+              {
+                "event_id": "evt_2699a28cfe081f8fb38b34c818d511df",
+                "type": "order.status_changed",
+                "outcome": "ok",
+                "result": "updated",
+                "error_code": null,
+                "message": null
+              }
+            ]
+          }
+        }
+      ],
+      "Respuesta": [
+        {
+          "processed": 2,
+          "ok": 2,
+          "rejected": 0,
+          "skipped": 0,
+          "errors": 0,
+          "results": [
+            {
+              "event_id": "evt_993f0e0299e169e8b42bcbe792e72155",
+              "type": "order.created",
+              "outcome": "ok",
+              "result": "created",
+              "error_code": null,
+              "message": null
+            },
+            {
+              "event_id": "evt_2699a28cfe081f8fb38b34c818d511df",
+              "type": "order.status_changed",
+              "outcome": "ok",
+              "result": "updated",
+              "error_code": null,
+              "message": null
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "ejecucion": 4,
+    "workflow": "JqWgkBC295RCqXQB",
+    "modo": "trigger",
+    "estado": "success",
+    "inicio_utc": "2026-11-04 12:05:42.375",
+    "fin_utc": "2026-11-04 12:05:43.769",
+    "recorrido": [
+      {
+        "nodo": "Cada minuto",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Leer cursor",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Preparar consulta",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Pedir eventos nuevos",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Normalizar eventos (sondeo)",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Procesar de uno en uno",
+        "ejecuciones": 2,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Validar contrato",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Enrutar por tipo",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Preparar cambio de estado",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Enviar cambio de estado",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Clasificar resultado",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "¿Error técnico?",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Calcular cursor y resumen",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "¿Guardar cursor?",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Guardar cursor",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      },
+      {
+        "nodo": "Respuesta",
+        "ejecuciones": 1,
+        "items_salida": 1,
+        "error": null
+      }
+    ],
+    "salidas_clave": {
+      "Validar contrato": [
+        {
+          "source": "poll",
+          "batch_next_cursor": 9,
+          "event": {
+            "event_id": "evt_065481d61d8a38136f7b1dfb93480674",
+            "cursor_id": 8,
+            "schema_version": 1,
+            "type": "order.status_changed",
+            "occurred_at": "2026-11-04T12:04:49Z",
+            "session_id": null,
+            "user_id": 2,
+            "payload": {
+              "order_code": "ZAP-20261104-0001",
+              "from": "paid_simulated",
+              "to": "pending_preparation",
+              "by": "admin@zapatero.test",
+              "note": "Preparando el envío (prueba escenario 2)"
+            }
+          },
+          "event_id": "evt_065481d61d8a38136f7b1dfb93480674",
+          "event_type": "order.status_changed",
+          "cursor_id": 8,
+          "route": "order.status_changed",
+          "errors": []
+        }
+      ],
+      "Preparar cambio de estado": [
+        {
+          "source": "poll",
+          "batch_next_cursor": 9,
+          "event": {
+            "event_id": "evt_065481d61d8a38136f7b1dfb93480674",
+            "cursor_id": 8,
+            "schema_version": 1,
+            "type": "order.status_changed",
+            "occurred_at": "2026-11-04T12:04:49Z",
+            "session_id": null,
+            "user_id": 2,
+            "payload": {
+              "order_code": "ZAP-20261104-0001",
+              "from": "paid_simulated",
+              "to": "pending_preparation",
+              "by": "admin@zapatero.test",
+              "note": "Preparando el envío (prueba escenario 2)"
+            }
+          },
+          "event_id": "evt_065481d61d8a38136f7b1dfb93480674",
+          "event_type": "order.status_changed",
+          "cursor_id": 8,
+          "route": "order.status_changed",
+          "errors": [],
+          "prepared": true,
+          "bo_payload": {
+            "event_id": "evt_065481d61d8a38136f7b1dfb93480674",
+            "event_type": "order.status_changed",
+            "workflow": "wf1-pedidos",
+            "execution_id": "4",
+            "occurred_at": "2026-11-04T12:04:49Z",
+            "status": "pending_preparation"
+          }
+        }
+      ],
+      "Enviar cambio de estado": [
+        {
+          "body": {
+            "result": "updated",
+            "order_code": "ZAP-20261104-0001"
+          },
+          "statusCode": 200,
+          "statusMessage": "OK"
+        }
+      ],
+      "Clasificar resultado": [
+        {
+          "source": "poll",
+          "event_id": "evt_065481d61d8a38136f7b1dfb93480674",
+          "event_type": "order.status_changed",
+          "cursor_id": 8,
+          "batch_next_cursor": 9,
+          "route": "order.status_changed",
+          "outcome": "ok",
+          "result": "updated",
+          "error_code": null,
+          "message": null
+        }
+      ],
+      "Calcular cursor y resumen": [
+        {
+          "save": true,
+          "cursor": "9",
+          "summary": {
+            "processed": 1,
+            "ok": 1,
+            "rejected": 0,
+            "skipped": 0,
+            "errors": 0,
+            "results": [
+              {
+                "event_id": "evt_065481d61d8a38136f7b1dfb93480674",
+                "type": "order.status_changed",
+                "outcome": "ok",
+                "result": "updated",
+                "error_code": null,
+                "message": null
+              }
+            ]
+          }
+        }
+      ],
+      "Respuesta": [
+        {
+          "processed": 1,
+          "ok": 1,
+          "rejected": 0,
+          "skipped": 0,
+          "errors": 0,
+          "results": [
+            {
+              "event_id": "evt_065481d61d8a38136f7b1dfb93480674",
+              "type": "order.status_changed",
+              "outcome": "ok",
+              "result": "updated",
+              "error_code": null,
+              "message": null
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

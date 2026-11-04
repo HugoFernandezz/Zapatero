@@ -1,0 +1,40 @@
+﻿Contrato de las APIs
+  OK    la API de la tienda sin token responde 401
+  OK    la API de la tienda con token incorrecto responde 401
+  OK    el token de la tienda no abre la API del back-office
+  OK    after_id negativo se rechaza con 400
+  OK    un pedido inexistente en la tienda responde 404
+Escenario 1: pedido generado en la tienda e integrado en el back-office
+  OK    la tienda publica order.created de ZAP-20261104-0001
+  OK    el evento cumple el contrato que valida WF1
+  OK    el pago aprobado publica su cambio de estado created → paid_simulated
+  OK    el back-office crea el pedido (HTTP 201, created)
+  OK    en el back-office queda pagado (paid_simulated)
+  OK    el importe coincide con el de la tienda
+  OK    las líneas del pedido llegan con su cantidad
+  OK    el email del cliente llega normalizado a minúsculas
+  OK    el pedido guarda su fecha
+  OK    la API del back-office devuelve el pedido con su línea
+  OK    repetir el mismo evento devuelve duplicate y no duplica el pedido
+  OK    la ejecución correcta queda en el log de integración
+  OK    el cursor no repite eventos ya leídos
+Escenario 1: rama de error
+  OK    WF1 rechaza un order.created sin líneas
+  OK    el back-office rechaza un pedido incompleto con 422
+  OK    el rechazo queda registrado en el log
+Escenario 2: cambio de estado en la tienda reflejado en el back-office
+  OK    la tienda publica order.status_changed → pending_preparation
+  OK    el evento de cambio cumple el contrato de WF1
+  OK    el back-office aplica el cambio (HTTP 200, updated)
+  OK    el pedido queda en pending_preparation en el back-office
+  OK    repetir el cambio es idempotente
+  OK    un evento más antiguo se ignora (stale)
+  OK    y el estado no retrocede
+  OK    un estado desconocido se rechaza con 422
+Escenario 2: cambio que llega antes que el pedido
+  OK    sin el pedido en el back-office, el cambio queda pendiente (HTTP 202)
+  OK    el pendiente queda registrado
+  OK    al llegar el pedido se crea
+  OK    y queda con el estado más reciente
+
+Integración: todas las comprobaciones correctas.

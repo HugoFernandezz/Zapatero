@@ -147,7 +147,7 @@ La primera vez descarga la imagen y tarda unos minutos. Abre http://localhost:56
 composer test
 ```
 
-Ejecuta tres suites: `tests/smoke.php` (tienda, eventos, API), `tests/backoffice.php` (integración, agente y Telegram) y `tests/metrics.php` (métricas). En Windows pueden salir avisos de `unlink` al borrar la base temporal; son inofensivos.
+Ejecuta cinco suites: `tests/smoke.php` (tienda, eventos, API), `tests/backoffice.php` (integración, agente y Telegram), `tests/metrics.php` (métricas), `tests/http.php` (navegación pública y seguridad de Telegram) y `tests/integracion.php` (escenarios 1 y 2 por HTTP, de la tienda al back-office, con el mismo contrato que aplica WF1). En Windows pueden salir avisos de `unlink` al borrar la base temporal; son inofensivos.
 
 ## Usuarios y datos de prueba
 
@@ -157,7 +157,7 @@ Ejecuta tres suites: `tests/smoke.php` (tienda, eventos, API), `tests/backoffice
 | Administrador | `ADMIN_EMAIL` / `ADMIN_PASSWORD` de tu `.env`. Se crea al abrir `/login` por primera vez y te lleva a `/admin/pedidos` |
 | Back-office de integración | `/bo` (requiere haber entrado como administrador) |
 | Tarjeta aprobada | Cualquier número de 13 a 19 cifras, p. ej. `4242424242424242`, caducidad futura `MM/AA` y CVC de 3 cifras |
-| Tarjeta rechazada | `0000000000000000`: el pedido nace cancelado y no descuenta stock |
+| Tarjeta rechazada | `4000000000000002` o `0000000000000000`: el pedido nace cancelado y no descuenta stock |
 | Descuentos | `ZAP5` (−5 €) y `BIENVENIDA10` (−10 %) |
 
 ## Probar los tres escenarios
@@ -176,6 +176,8 @@ Pruebas de error y de seguridad:
 ./n8n/probar.ps1 -Payload 90-error-payload-invalido.json
 ./n8n/probar.ps1 -Payload 91-esc3-prompt-injection.json -Order ZAP-AAAAMMDD-NNNN -Flow wf2
 ```
+
+Las capturas y logs de una ejecución real de los escenarios 1 y 2 (back-office antes y después, ejecuciones de WF1, rama de error e idempotencia) están en [docs/evidencias/escenarios-1-2](docs/evidencias/escenarios-1-2/LEEME.md).
 
 El primero debe terminar en la **rama de error** (`rejected`, registrada en `/bo/integracion`). El segundo intenta manipular al agente: no debe cancelar el pedido ni prometer reembolsos. Repetir un payload con el mismo `-EventId` devuelve `duplicate` sin crear nada nuevo (idempotencia).
 
