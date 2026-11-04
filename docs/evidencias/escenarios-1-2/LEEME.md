@@ -8,7 +8,12 @@ Ejecución real del 04/11/2026, entre las 12:01 y las 12:11 UTC. Todos los datos
 - **n8n:** versión 2.46.4, la misma que el despliegue de Render, ejecutada con Node 24. Solo se importó y publicó `n8n/workflows/wf1-pedidos-sincronizacion.json`, sin modificarlo.
 - **Configuración:** las variables de `n8n/n8n.env.example`, con tokens de prueba generados para esta ejecución. No hay tokens, contraseñas ni enlaces de Telegram en estos ficheros.
 
-**Limitación:** esta ejecución es local, así que no sustituye a la demostración en el entorno publicado (n8n en Render y back-office en zapatero.onl), que exige el enunciado. El workflow, la API y el back-office son los mismos, de modo que el recorrido debe repetirse igual allí cuando WF1 esté publicado en Render.
+**Entorno publicado:** el mismo recorrido se repitió en Render y zapatero.onl tras publicar WF1 (PR #11). El pedido ficticio `ZAP-20261104-0001` de producción se creó y sincronizó en la ejecución #15 de WF1, y su cambio a `pending_preparation` llegó en la #101. Las evidencias están en [`docs/estado-render.md`](../../estado-render.md):
+- tienda: [`pedido-ficticio-render-2026-11-04.jpg`](../pedido-ficticio-render-2026-11-04.jpg) y [`cambio-estado-tienda-render.jpg`](../cambio-estado-tienda-render.jpg);
+- back-office: [`wf1-backoffice-12-pedidos.jpg`](../wf1-backoffice-12-pedidos.jpg), con el estado antes y después en [`caso-render-estado-inicial.json`](../caso-render-estado-inicial.json) y [`caso-render-estado.json`](../caso-render-estado.json);
+- webhook: [`wf1-webhook-produccion.json`](../wf1-webhook-produccion.json).
+
+Ese pedido de producción es distinto del de esta ejecución local, aunque coincida el código, porque cada entorno numera sus propios pedidos.
 
 ## Escenario 1: pedido generado e integrado
 
