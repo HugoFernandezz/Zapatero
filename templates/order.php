@@ -75,7 +75,7 @@ $statusUrl = '/pedido/' . rawurlencode((string) $o['code']) . '/estado';
         <h2>Recibe los avisos de tu pedido por Telegram</h2>
         <p class="muted">Pulsa el botón, abre el chat y toca «Iniciar». En menos de un minuto recibirás la confirmación. El enlace es personal, de un solo uso y caduca en 30 minutos. Prototipo académico.</p>
     </div>
-    <form method="post" action="/pedido/<?= rawurlencode((string) $o['code']) ?>/telegram" target="_blank">
+    <form method="post" action="/pedido/<?= rawurlencode((string) $o['code']) ?>/telegram">
         <input type="hidden" name="_csrf" value="<?= $esc($csrfToken ?? '') ?>">
         <button class="button-telegram" type="submit"><span aria-hidden="true">✈</span> Recibir avisos por Telegram</button>
     </form>

@@ -1,0 +1,21 @@
+{
+  "fecha_utc": "2026-11-04T13:34:38.689057+00:00",
+  "pedido": "ZAP-20261104-0001",
+  "estado_pedido": "paid_simulated",
+  "telegram_vinculado": false,
+  "tickets": [
+    {
+      "ticket_ref": "SUP-5",
+      "status": "open"
+    }
+  ],
+  "acciones": [
+    {
+      "id": 1,
+      "ticket_ref": "SUP-5",
+      "status": "rejected",
+      "action_type": "customer_message"
+    }
+  ],
+  "datos_personales_incluidos": false
+}

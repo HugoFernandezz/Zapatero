@@ -1,0 +1,31 @@
+{
+  "fecha_utc": "2026-11-04T14:04:50.535773+00:00",
+  "pedido": "ZAP-20261104-0001",
+  "estado_pedido": "pending_preparation",
+  "telegram_vinculado": true,
+  "tickets": [
+    {
+      "ticket_ref": "SUP-6",
+      "status": "open"
+    },
+    {
+      "ticket_ref": "SUP-5",
+      "status": "open"
+    }
+  ],
+  "acciones": [
+    {
+      "id": 1,
+      "ticket_ref": "SUP-5",
+      "status": "rejected",
+      "action_type": "customer_message"
+    },
+    {
+      "id": 2,
+      "ticket_ref": "SUP-6",
+      "status": "executed",
+      "action_type": "customer_message"
+    }
+  ],
+  "datos_personales_incluidos": false
+}

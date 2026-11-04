@@ -1,0 +1,12 @@
+{
+  "fecha_utc": "2026-11-04T13:19:51.639843+00:00",
+  "workflow": "WF2",
+  "cursor_inicial": 322,
+  "valor_anterior": null,
+  "motivo": "Procesar nuevos casos ficticios sin enviar datos históricos no verificados al proveedor de IA. Los eventos anteriores se conservan en la tienda; no se borran.",
+  "reversible": "El equipo puede revisar y reimportar el histórico desde su cursor anterior de forma acordada.",
+  "resultado": {
+    "key": "wf2_cursor",
+    "result": "saved"
+  }
+}
