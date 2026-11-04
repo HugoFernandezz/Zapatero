@@ -1,0 +1,10 @@
+{
+  "fecha_utc": "2026-11-04T13:09:47.401Z",
+  "servicio": "zapatero-n8n",
+  "workflow_id": "daHf5k4YLRDCcJXi",
+  "url_tienda": "https://www.zapatero.onl",
+  "url_backoffice": "https://www.zapatero.onl",
+  "tokens_coinciden_con_publicacion_DonDominio": true,
+  "secreto_webhook_configurado": true,
+  "secretos_incluidos": false
+}

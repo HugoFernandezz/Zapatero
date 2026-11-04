@@ -1,0 +1,27 @@
+{
+  "fecha_utc": "2026-11-04T13:12:12.096492+00:00",
+  "secretos_incluidos": false,
+  "configuracion_actual": {
+    "tienda_http": 200,
+    "backoffice_http": 200,
+    "pedidos_sincronizados": 11,
+    "pedidos_tienda": 12
+  },
+  "valores_recibidos": {
+    "tienda_http": 401,
+    "backoffice_http": 401
+  },
+  "telegram": {
+    "http": 200,
+    "token_valido": true,
+    "bot_username": "zapatero_ucam_demo_bot",
+    "webhook_configurado": false,
+    "webhook_host": null,
+    "actualizaciones_pendientes": 0
+  },
+  "groq": {
+    "http": 200,
+    "modelo": "openai/gpt-oss-120b",
+    "modelo_disponible": true
+  }
+}

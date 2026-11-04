@@ -1,0 +1,91 @@
+{
+  "fecha_utc": "2026-11-04T13:25:01.671745+00:00",
+  "workflow": "daHf5k4YLRDCcJXi",
+  "pedido_ficticio": "ZAP-20261104-0001",
+  "pruebas": [
+    {
+      "prueba": "pedido_ficticio",
+      "http": 200,
+      "resumen": {
+        "processed": 1,
+        "ok": 1,
+        "rejected": 0,
+        "skipped": 0,
+        "errors": 0,
+        "results": [
+          {
+            "event_id": "evt_ac85ffa677854225989ac98a8d7a5720",
+            "type": "order.created",
+            "outcome": "ok",
+            "result": "updated",
+            "error_code": null,
+            "message": null
+          }
+        ]
+      }
+    },
+    {
+      "prueba": "idempotencia",
+      "http": 200,
+      "resumen": {
+        "processed": 1,
+        "ok": 1,
+        "rejected": 0,
+        "skipped": 0,
+        "errors": 0,
+        "results": [
+          {
+            "event_id": "evt_ac85ffa677854225989ac98a8d7a5720",
+            "type": "order.created",
+            "outcome": "ok",
+            "result": "duplicate",
+            "error_code": null,
+            "message": null
+          }
+        ]
+      }
+    },
+    {
+      "prueba": "sin_secreto",
+      "http": 200,
+      "resumen": {
+        "processed": 1,
+        "ok": 0,
+        "rejected": 1,
+        "skipped": 0,
+        "errors": 0,
+        "results": [
+          {
+            "event_id": null,
+            "type": null,
+            "outcome": "rejected",
+            "result": null,
+            "error_code": "unauthorized",
+            "message": "Webhook sin cabecera X-Webhook-Secret válida"
+          }
+        ]
+      }
+    },
+    {
+      "prueba": "contrato_invalido",
+      "http": 200,
+      "resumen": {
+        "processed": 1,
+        "ok": 0,
+        "rejected": 1,
+        "skipped": 0,
+        "errors": 0,
+        "results": [
+          {
+            "event_id": null,
+            "type": null,
+            "outcome": "rejected",
+            "result": null,
+            "error_code": "invalid_payload",
+            "message": "event_id inválido (se espera evt_ + 32 hex); schema_version no soportada (se espera 1); type no soportado: undefined; occurred_at no es una fecha ISO 8601; payload ausente"
+          }
+        ]
+      }
+    }
+  ]
+}
