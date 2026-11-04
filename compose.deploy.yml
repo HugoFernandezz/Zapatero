@@ -1,0 +1,32 @@
+# Despliegue de la tienda y el back-office con Docker.
+# Requiere un proxy inverso HTTPS en el servidor; n8n se configura por separado.
+services:
+  zapatero:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: zapatero-web:local
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      TRUST_PROXY: "true"
+      DB_PATH: storage/zapatero.sqlite
+      BO_DB_PATH: storage/backoffice.sqlite
+    ports:
+      - "127.0.0.1:8080:80"
+    volumes:
+      - zapatero_storage:/var/www/zapatero/storage
+    healthcheck:
+      test: ["CMD", "php", "-r", "$$c=@file_get_contents('http://127.0.0.1/health'); exit($$c !== false && str_contains($$c, '\"status\":\"ok\"') ? 0 : 1);"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+volumes:
+  zapatero_storage:
+
+

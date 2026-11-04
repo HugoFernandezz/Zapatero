@@ -1,0 +1,18 @@
+{
+  "workflow_id": "7kUldPi4bl3J10JS",
+  "execution_id": 1,
+  "estado": "Succeeded",
+  "duracion_s": 4.127,
+  "resultado": [
+    {
+      "origen": "n8n alojado en Render (red externa al equipo local)",
+      "fecha_utc": "2026-11-04T05:58:46.868Z",
+      "tienda": "https://www.zapatero.onl/health",
+      "http_tienda": 200,
+      "backoffice": "https://www.zapatero.onl/bo/api/v1/metrics",
+      "http_backoffice": 200,
+      "resultado": "correcto",
+      "alcance": "Lectura HTTP y API autenticada; no ejecuta ventas, Telegram ni modelo IA"
+    }
+  ]
+}

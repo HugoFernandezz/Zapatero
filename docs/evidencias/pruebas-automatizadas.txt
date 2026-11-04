@@ -1,0 +1,152 @@
+Datos maestros
+  OK    hay al menos 8 productos
+  OK    hay categorías (colecciones)
+  OK    existe el cliente de prueba
+Flujo de compra
+  OK    total = subtotal + envío (sin descuento)
+  OK    el IVA (21 %) está incluido en el total
+  OK    se genera un identificador único (ZAP-20261103-0001)
+  OK    el pedido queda en «pagado simulado»
+  OK    se descuenta el stock
+  OK    hay línea de pedido y pago simulado
+Pago rechazado
+  OK    tarjeta rechazada → pedido cancelado
+Estados
+  OK    bloquea el salto «pagado» → «enviado»
+  OK    pendiente de preparación: se avisa al cliente por email
+  OK    enviado: se avisa al cliente por email
+  OK    cada aviso queda registrado como evento
+Soporte
+  OK    valida motivo y longitud del mensaje
+  OK    registra la solicitud de soporte
+  OK    genera el evento support.requested
+  OK    limita las solicitudes por pedido
+Eventos
+  OK    se ha registrado product.viewed
+  OK    se ha registrado cart.item_added
+  OK    se ha registrado checkout.started
+  OK    se ha registrado order.created
+  OK    se ha registrado payment.simulated
+  OK    se ha registrado support.requested
+  OK    el filtro por tipo funciona
+  OK    la búsqueda por código de pedido funciona
+  OK    el CSV neutraliza fórmulas
+Integración (T2)
+  OK    todos los eventos tienen event_id único
+  OK    el event_id tiene el formato evt_ + 32 hex
+  OK    el cursor devuelve eventos ascendentes y limit + 1 para detectar más
+  OK    sin eventos nuevos el cursor devuelve vacío
+
+Todo correcto.
+Escenario 1: pedido
+  OK    crea el pedido
+  OK    guarda las líneas
+  OK    normaliza el email del cliente a minúsculas
+  OK    el mismo event_id es idempotente (duplicate)
+  OK    no duplica el pedido
+  OK    el duplicado queda registrado en el log
+Validación
+  OK    rechaza email inválido y pedido sin líneas
+  OK    el rechazo queda registrado
+  OK    rechaza event_id con formato incorrecto
+  OK    un rechazo no crea entidades
+  OK    rechaza importes que no son enteros
+Escenario 2: sincronización
+  OK    aplica el cambio de estado
+  OK    ignora un evento más antiguo (orden temporal)
+  OK    una foto antigua del pedido no hace retroceder el estado
+  OK    pedido desconocido => pendiente de sincronización
+  OK    al llegar el pedido se aplica el cambio pendiente
+  OK    rechaza estados desconocidos
+Escenario 3: tickets
+  OK    crea el ticket asociado a pedido y cliente
+  OK    ticket repetido => duplicate aunque cambie el event_id
+  OK    ticket de un pedido desconocido queda pendiente
+  OK    resolver un ticket guarda resolved_at
+  OK    reabrir lo borra
+Agente de IA
+  OK    la propuesta nace pendiente de revisión humana
+  OK    no se puede ejecutar sin aprobación
+  OK    el agente no puede proponer cancelar pedidos
+  OK    acciones fuera de la lista permitida se rechazan
+  OK    rechaza propuestas sobre pedidos inexistentes
+  OK    confianza baja eleva la prioridad de revisión
+  OK    y añade una advertencia de riesgo
+  OK    la aprobación registra quién decide
+  OK    no se puede cambiar una decisión ya tomada
+  OK    tras aprobar se puede ejecutar (modo simulado)
+  OK    una propuesta rechazada no se ejecuta nunca
+Telegram: enlace con token de un solo uso
+  OK    el token es aleatorio de 128 bits (32 caracteres hexadecimales)
+  OK    en la base solo se guarda el hash, no el token en claro
+  OK    el código del pedido ya no sirve como token
+  OK    un chat_id inválido se rechaza sin consumir el token
+  OK    un token desconocido se rechaza
+  OK    el token válido vincula el chat con su pedido
+  OK    el chat queda guardado en el cliente
+  OK    el token no se puede reutilizar
+  OK    un token nuevo invalida el anterior del mismo pedido
+  OK    el último token emitido sí funciona
+  OK    un token caducado se rechaza
+  OK    si el pedido aún no está en el back-office se avisa (409)
+  OK    y el token NO se consume, para poder reintentar
+  OK    los rechazos quedan en el log de integración
+  OK    guarda y lee el cursor de eventos
+
+Todo correcto.
+Sin datos (todo a cero, sin errores)
+  OK    pedidos e importe a cero
+  OK    las razones sin datos son null (no 0 inventado)
+  OK    la serie diaria sin pedidos tiene solo el día de hoy
+Datos del sistema
+Pedidos
+  OK    número de pedidos: 3 (1 cancelado, 2 activos)
+  OK    importe total simulado sin cancelados: 350,00 €
+  OK    pedidos por estado: 1 cancelado, 1 pagado, 1 enviado
+  OK    serie diaria sin huecos desde el primer pedido hasta hoy
+  OK    pedidos por día correctos (2, 0, 1)
+  OK    producto más solicitado: Arcade Runner (3 uds), sin contar cancelados
+  OK    las 5 unidades de «Nube» del pedido cancelado no cuentan (solo 1)
+Tickets
+  OK    tickets: 1 abierto, 1 en curso, 1 resuelto
+  OK    tiempo medio de resolución ≈ 120 min (120)
+Integración
+  OK    el rechazo por validación cuenta como evento fallido
+  OK    el duplicado se cuenta como duplicate
+  OK    correctos + fallidos = total del registro
+  OK    errores por tipo: validation_failed
+  OK    tasa de éxito entre 0 y 1
+Embudo
+  OK    sesiones distintas por paso (3 → 2 → 1 → 1)
+  OK    conversión = 1 / 3
+Agente
+  OK    propuestas: 4 (1 aprobada, 1 rechazada, 2 pendientes)
+  OK    tasa de aprobación sobre las decididas = 50 %
+  OK    el modo seguro (confianza 0) no distorsiona la confianza media
+Gráficos
+  OK    SVG accesible y con el texto escapado (sin inyección)
+  OK    barras verticales generadas
+  OK    gráficos vacíos no fallan
+
+Todo correcto.
+HTTP: navegación pública y seguridad de Telegram
+  OK    /: pie visible con políticas y aviso académico
+  OK    /catalogo: pie visible con políticas y aviso académico
+  OK    /quienes-somos: pie visible con políticas y aviso académico
+  OK    /politicas: pie visible con políticas y aviso académico
+  OK    existe el destino del enlace #como-funciona
+  OK    existe el destino del enlace #pagos-envios
+  OK    existe el destino del enlace #cambios-devoluciones
+  OK    existe el destino del enlace #datos
+  OK    existe el destino del enlace #soporte
+  OK    /carrito: pie visible con políticas y aviso académico
+  OK    /login: pie visible con políticas y aviso académico
+  OK    sin Bearer válido no se accede a la vinculación
+  OK    sin Bearer válido no se accede a la vinculación
+  OK    el payload antiguo con order_code se rechaza sin modificar el chat
+  OK    tipos JSON incorrectos se rechazan sin error de servidor
+  OK    el contrato usado por WF3 sigue vinculando con token de un solo uso
+  OK    reutilizar el token no permite sustituir el chat
+  OK    los rechazos autenticados quedan auditados sin guardar el secreto
+  OK    el back-office público exige iniciar sesión
+HTTP: todas las comprobaciones correctas.

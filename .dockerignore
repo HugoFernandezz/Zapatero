@@ -1,0 +1,12 @@
+# Evita enviar archivos locales o secretos al contexto de construcción.
+.git
+.env
+.env.*
+!.env.example
+n8n/n8n.env
+vendor
+storage/*
+!storage/.htaccess
+*.sqlite
+*.sqlite-*
+*.db

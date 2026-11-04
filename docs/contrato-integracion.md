@@ -109,3 +109,9 @@ Reglas: `event_id` repetido → `duplicate` sin efectos; evento más antiguo que
 ```
 
 `case_type`: delivery_issue, damaged_product, size_change, invoice_issue, return_request, incident, other · `action.type`: customer_message, status_change_proposal, internal_task, no_action · **prohibido**: proponer `cancelled`, reembolsos o cualquier acción fuera de la lista (422). Con `confidence < 0.6` la prioridad sube a `high` y se añade un riesgo automáticamente. Estados finales: `pending_review`, `approved`, `rejected`, `executed`, `executed_simulated`, `execution_failed`.
+
+## Retirada de la vinculación antigua de Telegram
+
+`POST /bo/api/v1/telegram/link` mantiene la URL de WF3, pero exige `token` y `chat_id` como cadenas. Se elimina la alternativa `{order_code, chat_id}` y el método que la ejecutaba. Un código de pedido, incluso con Bearer válido, obtiene **422 `validation_failed`** sin modificar el chat. Sin Bearer válido se devuelve 401; sin configurar la API, 503. Los rechazos autenticados quedan auditados sin guardar el secreto.
+
+El Bearer autentica a n8n; el token del enlace acredita acceso al pedido. Se mantiene su hash SHA-256, caducidad de 30 minutos, invalidación al emitir otro y consumo único. Los tests del back-office y `tests/http.php` comprueban el rechazo del contrato antiguo y la continuidad del enlace válido. WF3 ya utiliza el token y no necesita modificar sus nodos.

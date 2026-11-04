@@ -21,6 +21,7 @@ use App\Controllers\HomeController;
 use App\Controllers\OrderController;
 use App\Controllers\PaymentController;
 use App\Controllers\ProductController;
+use App\Controllers\PoliciesController;
 use App\Middleware\AdminAuth;
 use App\Middleware\ApiToken;
 use App\Repositories\CatalogRepository;
@@ -85,6 +86,7 @@ return function (App $app, PDO $pdo, PhpRenderer $view): void {
     );
 
     $app->get('/', [new HomeController($view, $catalogService), 'index']);
+    $app->get('/politicas', [new PoliciesController($view), 'index']);
     $app->get('/catalogo', [new CatalogController($view, $catalogService), 'index']);
     $app->get('/producto/{slug}', [new ProductController($view, $catalogService, $recordEvent), 'show']);
 

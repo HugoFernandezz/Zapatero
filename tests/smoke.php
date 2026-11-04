@@ -115,6 +115,8 @@ $check(count($page) === 4 && (int) $page[0]['id'] < (int) $page[1]['id'], 'el cu
 $check($repo->after((int) $scalar('SELECT MAX(id) FROM events'), 10) === [], 'sin eventos nuevos el cursor devuelve vacío');
 
 // Limpieza
+unset($orders, $support, $orderRepo, $cart, $recordEvent, $events, $repo, $scalar, $pdo);
+gc_collect_cycles();
 foreach (glob($tmp . '/{*,mail/*}', GLOB_BRACE) ?: [] as $file) {
     if (is_file($file)) {
         unlink($file);

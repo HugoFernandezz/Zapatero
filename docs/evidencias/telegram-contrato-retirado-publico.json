@@ -1,0 +1,9 @@
+{
+  "fecha_utc": "2026-11-04T06:01:34.1540156Z",
+  "prueba": "Contrato antiguo de Telegram rechazado con Bearer correcto",
+  "url": "https://www.zapatero.onl/bo/api/v1/telegram/link",
+  "http": 422,
+  "esperado": 422,
+  "correcto": true,
+  "alcance": "Petición con código ficticio no existente; no vincula un chat. La inmutabilidad sobre pedidos de prueba se verifica en la suite HTTP local."
+}

@@ -1,0 +1,130 @@
+{
+  "name": "Zapatero · Verificación pública de despliegue (ejecución manual)",
+  "active": false,
+  "nodes": [
+    {
+      "id": "130bcb63-75d4-4dce-ba3d-db3dae97e4df",
+      "name": "Inicio manual de comprobación",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "7fdfe03f-7ccc-41df-a606-34f3b681cc29",
+      "name": "Salud pública",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        250,
+        0
+      ],
+      "parameters": {
+        "url": "https://www.zapatero.onl/health",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 30000
+        }
+      }
+    },
+    {
+      "id": "5248bea7-eb20-460f-ac00-95c8cbb663b2",
+      "name": "API protegida del back-office",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        0
+      ],
+      "parameters": {
+        "url": "={{ $env.BACKOFFICE_BASE_URL }}/bo/api/v1/metrics",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.BO_API_TOKEN }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 30000
+        }
+      }
+    },
+    {
+      "id": "c7155170-1b07-49cd-8524-170d38367c11",
+      "name": "Resultado sin datos privados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        750,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const salud = $('Salud pública').first().json.statusCode;\nconst backoffice = $input.first().json.statusCode;\nif (salud !== 200 || backoffice !== 200) throw new Error('No se ha validado la publicación');\nreturn [{json:{origen:'n8n alojado en Render (red externa al equipo local)',fecha_utc:new Date().toISOString(),tienda:'https://www.zapatero.onl/health',http_tienda:salud,backoffice:'https://www.zapatero.onl/bo/api/v1/metrics',http_backoffice:backoffice,resultado:'correcto',alcance:'Lectura HTTP y API autenticada; no ejecuta ventas, Telegram ni modelo IA'}}];"
+      }
+    }
+  ],
+  "connections": {
+    "Inicio manual de comprobación": {
+      "main": [
+        [
+          {
+            "node": "Salud pública",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salud pública": {
+      "main": [
+        [
+          {
+            "node": "API protegida del back-office",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "API protegida del back-office": {
+      "main": [
+        [
+          {
+            "node": "Resultado sin datos privados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
